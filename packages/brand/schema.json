@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://churchkit.org/schema/brand.json",
+  "title": "ChurchKit brand",
+  "description": "Everything that makes a ChurchKit deployment look and sound like one particular church.",
+  "type": "object",
+  "required": ["slug", "identity", "contact", "colors", "fonts", "urls"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "identity": {
+      "type": "object",
+      "required": ["name", "shortName", "tagline"],
+      "properties": {
+        "name": { "type": "string" },
+        "shortName": { "type": "string", "description": "Used where space is tight, e.g. the mobile header." },
+        "tagline": { "type": "string" },
+        "description": { "type": "string", "description": "Default meta description." }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "required": ["email"],
+      "properties": {
+        "phone": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "address": {
+          "type": "object",
+          "properties": {
+            "street": { "type": "string" },
+            "city": { "type": "string" },
+            "region": { "type": "string" },
+            "postalCode": { "type": "string" },
+            "country": { "type": "string" }
+          }
+        }
+      }
+    },
+    "serviceTimes": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } },
+      "description": "Keyed by day, e.g. sunday / wednesday."
+    },
+    "colors": {
+      "type": "object",
+      "description": "All 6-digit hex. brand-on-white and ink-on-surface must clear 4.5:1 contrast.",
+      "required": [
+        "brand", "brandMid", "brandLight", "brandPale", "brandFaint",
+        "accent", "accentPale", "ink", "inkSoft", "inkFaint",
+        "surface", "white", "border", "borderSoft", "error"
+      ],
+      "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+    },
+    "fonts": {
+      "type": "object",
+      "required": ["heading", "body", "display"],
+      "properties": {
+        "heading": { "$ref": "#/$defs/font" },
+        "body": { "$ref": "#/$defs/font" },
+        "display": { "$ref": "#/$defs/font" },
+        "webFontUrl": { "type": "string", "description": "Stylesheet URL, e.g. Google Fonts." },
+        "mobile": {
+          "type": "object",
+          "description": "expo-font family names, which differ from CSS family names.",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "urls": {
+      "type": "object",
+      "required": ["web", "api"],
+      "additionalProperties": { "type": "string" }
+    },
+    "social": { "type": "object", "additionalProperties": { "type": "string" } },
+    "assets": {
+      "type": "object",
+      "description": "Paths relative to this brand directory.",
+      "additionalProperties": { "type": "string" }
+    },
+    "mobile": {
+      "type": "object",
+      "properties": {
+        "scheme": { "type": "string", "description": "Deep-link URL scheme." },
+        "bundleIdentifier": { "type": "string", "description": "iOS. Cannot change after first App Store release." },
+        "androidPackage": { "type": "string", "description": "Android. Cannot change after first Play release." },
+        "splashBackgroundColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      }
+    }
+  },
+  "$defs": {
+    "font": {
+      "type": "object",
+      "required": ["stack"],
+      "properties": {
+        "family": { "type": "string" },
+        "stack": { "type": "string", "description": "Full CSS font stack including fallbacks." }
+      }
+    }
+  }
+}

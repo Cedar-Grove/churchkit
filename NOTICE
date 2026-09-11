@@ -1,0 +1,21 @@
+ChurchKit
+Copyright 2026 ChurchKit Contributors
+
+This product includes software developed as part of the ChurchKit project
+(https://github.com/cedar-grove/churchkit), licensed under the Apache
+License, Version 2.0.
+
+ChurchKit integrates with, but is not affiliated with, endorsed by, or
+sponsored by any of the third-party services it supports. All trademarks
+are the property of their respective owners:
+
+  - Planning Center is a trademark of Ministry Centered Technologies, Inc.
+  - Cloudflare, Workers, D1 and R2 are trademarks of Cloudflare, Inc.
+  - YouTube and Google Cloud are trademarks of Google LLC.
+  - OneSignal is a trademark of OneSignal, Inc.
+  - Resend is a trademark of Resend, Inc.
+  - Expo and EAS are trademarks of 650 Industries, Inc.
+  - Sentry is a trademark of Functional Software, Inc.
+
+Scripture text and audio are provided by third-party APIs under their own
+licences and are not distributed with this software. See docs/scripture.md.

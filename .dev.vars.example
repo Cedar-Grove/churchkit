@@ -1,0 +1,46 @@
+# ChurchKit API — local development secrets.
+# Copy to apps/api/.dev.vars and fill in. NEVER commit the filled copy.
+# Every value below is per-church: each deployment registers its own.
+# See docs/self-hosting.md for where to obtain each one.
+
+# ── Planning Center ─────────────────────────────────────────────
+# OAuth app (user login). PKCE flow — no client secret exists.
+PCO_CLIENT_ID=
+# Personal Access Token (server-side API calls)
+PCO_API_ID=
+PCO_API_SECRET=
+# Services > your Sunday service type > numeric ID in the URL
+PCO_SERVICE_TYPE_ID=
+# People > Settings > Note Categories (create these first)
+PCO_CONNECT_CARD_NOTE_CATEGORY_ID=
+PCO_PRAYER_REQUEST_NOTE_CATEGORY_ID=
+PCO_IM_NEW_NOTE_CATEGORY_ID=
+
+# ── Email (Resend) ──────────────────────────────────────────────
+RESEND_API_KEY=
+EMAIL_STAFF_CONNECT_CARD=
+EMAIL_STAFF_IM_NEW=
+EMAIL_STAFF_CONTACT=
+EMAIL_FROM_PASTOR=
+
+# ── Push (OneSignal) ────────────────────────────────────────────
+ONESIGNAL_APP_ID=
+ONESIGNAL_API_KEY=
+
+# ── Sermon video (YouTube Data API v3) ──────────────────────────
+YOUTUBE_API_KEY=
+YOUTUBE_CHANNEL_ID=
+
+# ── Admin auth (Cloudflare Access) ──────────────────────────────
+# Zero Trust > Access > your admin app > Application Audience (AUD) tag
+CF_ACCESS_AUD=
+
+# ── Bot protection (Cloudflare Turnstile) ───────────────────────
+# Optional. With no secret set, form endpoints keep their other guards.
+TURNSTILE_SECRET=
+
+# ── Scripture ───────────────────────────────────────────────────
+# Bible Brain / Faith Comes By Hearing — audio + text
+BIBLE_BRAIN_API_KEY=
+# API.Bible (scripture.api.bible) — additional translations
+BIBLE_API_KEY=

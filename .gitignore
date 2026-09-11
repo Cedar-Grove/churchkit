@@ -1,0 +1,31 @@
+node_modules/
+dist/
+build/
+.wrangler/
+.astro/
+.expo/
+
+# Secrets — never commit
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+*.pem
+*.key
+
+# Per-deployment config belongs in your own private repo, not here
+tenants/
+brands/*/
+!brands/example-church/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+coverage/

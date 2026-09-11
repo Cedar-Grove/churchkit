@@ -1,0 +1,7 @@
+{
+  "name": "@churchkit/config",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Shared TypeScript types and environment schema across ChurchKit apps."
+}

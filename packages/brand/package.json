@@ -1,0 +1,14 @@
+{
+  "name": "@churchkit/brand",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Brand token schema and generator. One brand.json becomes CSS custom properties for the web apps and a theme module for the mobile app.",
+  "type": "module",
+  "main": "src/index.mjs",
+  "bin": { "churchkit-brand": "src/generate.mjs" },
+  "scripts": {
+    "build": "node src/generate.mjs --brand ../../examples/example-church/brand.json --out ../../dist/brand",
+    "test": "node src/validate.mjs ../../examples/example-church/brand.json"
+  }
+}
