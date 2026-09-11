@@ -1,0 +1,78 @@
+{
+  "cli": {
+    "version": ">= 10.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "channel": "development",
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "ONESIGNAL_DISABLE_LOCATION": "true",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
+    "preview": {
+      "channel": "preview",
+      "distribution": "internal",
+      "ios": {
+        "credentialsSource": "local",
+        "distribution": "store"
+      },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "ONESIGNAL_DISABLE_LOCATION": "true",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    },
+    "preview:simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "credentialsSource": "local"
+      },
+      "env": {
+        "EXPO_NO_CAPABILITY_SYNC": "1",
+        "ONESIGNAL_DISABLE_LOCATION": "true",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+      }
+    }
+  },
+  "submit": {
+    "internal": {
+      "ios": {
+        "ascAppId": "1544155228"
+      },
+      "android": {
+        "track": "internal"
+      }
+    },
+    "preview": {
+      "ios": {
+        "ascAppId": "1544155228"
+      },
+      "android": {
+        "track": "alpha"
+      }
+    },
+    "production": {
+      "ios": {
+        "ascAppId": "1544155228"
+      },
+      "android": {
+        "track": "production"
+      }
+    }
+  }
+}

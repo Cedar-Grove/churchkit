@@ -36,3 +36,8 @@ apps/*/wrangler.toml
 
 # Admin build-time config
 apps/admin/.env
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/android/
+apps/mobile/ios/
