@@ -29,3 +29,7 @@ Thumbs.db
 *.log
 npm-debug.log*
 coverage/
+
+# Per-deployment Wrangler config — copy from the .example files
+apps/*/wrangler.jsonc
+apps/*/wrangler.toml

@@ -1,0 +1,65 @@
+/**
+ * ChurchKit API — Wrangler configuration template.
+ *
+ * Copy to wrangler.jsonc and replace every <PLACEHOLDER>. The real file is
+ * gitignored: it names your database, bucket and domain, which are yours,
+ * not the project's.
+ *
+ * Nothing here is a secret. Credentials are Worker secrets — see
+ * .dev.vars.example at the repository root, and `wrangler secret put`.
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "<SLUG>-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-05-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": { "enabled": true },
+	"upload_source_maps": true,
+	"placement": { "mode": "smart" },
+
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "<SLUG>-db",
+			"database_id": "<D1_DATABASE_ID>", // printed by `wrangler d1 create`
+			"migrations_dir": "migrations"
+		}
+	],
+
+	// Optional. Remove this block if the admin panel will not upload images;
+	// uploads then report themselves unavailable instead of failing.
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "<SLUG>-media"
+		}
+	],
+
+	"vars": {
+		// Public base URL serving the MEDIA bucket. Omit alongside the bucket.
+		"MEDIA_PUBLIC_URL": "https://media.<YOUR_DOMAIN>",
+		// Origins allowed to call /api/admin/* with credentials. An exact
+		// origin, or a leading dot for a domain and its subdomains. Leave
+		// unset if the admin panel is served from this same origin.
+		"ADMIN_ALLOWED_ORIGINS": ".<YOUR_DOMAIN>"
+	},
+
+	"routes": [
+		{
+			"pattern": "api.<YOUR_DOMAIN>",
+			"custom_domain": true
+		}
+	],
+
+	// Keeps the D1-backed YouTube and Planning Center caches (src/lib/cache.ts)
+	// warm, so real page loads read cache instead of paying for the upstream
+	// fetch. Each cache's own TTL still decides whether a given run actually
+	// fetches anything, so a short interval costs nothing extra.
+	//
+	// Remove this block on a deployment with neither a YouTube channel nor
+	// Planning Center — there is nothing to warm.
+	"triggers": {
+		"crons": ["*/2 * * * *"]
+	}
+}

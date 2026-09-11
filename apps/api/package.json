@@ -2,5 +2,18 @@
   "name": "@churchkit/api",
   "version": "0.1.0",
   "private": true,
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "description": "ChurchKit API — Cloudflare Worker.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^3.99.0"
+  }
 }
