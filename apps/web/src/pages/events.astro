@@ -4,6 +4,7 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { getEvents, getSettings } from '../lib/api';
 import { env } from 'cloudflare:workers';
+import { formatsFrom, formatDate, formatTime } from '../lib/format';
 
 let events: any[] = [];
 try {
@@ -11,17 +12,18 @@ try {
 } catch {}
 
 const settings = await getSettings(env.API_BASE).catch(() => ({} as any));
+const formats = formatsFrom(settings);
 
 function formatEventDate(dateStr: string | null) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return null;
   return {
-    month: d.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/Chicago' }).toUpperCase(),
-    day: d.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'America/Chicago' }),
-    weekday: d.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Chicago' }),
-    fullDate: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' }),
-    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }),
+    month: formatDate(d, formats, { month: 'short' }).toUpperCase(),
+    day: formatDate(d, formats, { day: 'numeric' }),
+    weekday: formatDate(d, formats, { weekday: 'long' }),
+    fullDate: formatDate(d, formats),
+    time: formatTime(d, formats),
   };
 }
 ---

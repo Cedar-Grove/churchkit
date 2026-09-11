@@ -4,6 +4,7 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { getHome, getEvents, getCarousel } from '../lib/api';
 import { env } from 'cloudflare:workers';
+import { formatsFrom, formatDate, formatTime } from '../lib/format';
 
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
@@ -25,7 +26,7 @@ const carouselSlides: any[] =
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone });
+  return formatDate(d, formats, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function stripHtml(html: string): string {
@@ -35,20 +36,30 @@ function stripHtml(html: string): string {
 function formatEventDate(dateStr: string) {
   const d = new Date(dateStr);
   return {
-    month: d.toLocaleDateString('en-US', { month: 'short', timeZone }).toUpperCase(),
-    day: d.toLocaleDateString('en-US', { day: 'numeric', timeZone }),
-    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone }),
-    weekday: d.toLocaleDateString('en-US', { weekday: 'long', timeZone }),
+    month: formatDate(d, formats, { month: 'short' }).toUpperCase(),
+    day: formatDate(d, formats, { day: 'numeric' }),
+    time: formatTime(d, formats),
+    weekday: formatDate(d, formats, { weekday: 'long' }),
   };
 }
 
 // No invented service times. A wrong time published in a church's own
 // voice sends visitors to a locked building; an empty section just says
 // nothing until staff fill it in.
-const serviceTimes = settings.service_times ?? {};
+const serviceTimes: Record<string, string[]> = settings.service_times ?? {};
 
-// Times are rendered in the church's own timezone, not the server's.
-const timeZone: string = settings.timezone || 'UTC';
+/**
+ * Days this church meets, in the order it listed them. Any day key works —
+ * a church meeting on Saturday, or twice on Sunday under two labels, says
+ * so in its settings without anyone editing this page.
+ */
+const serviceDays: [string, string[]][] = Object.entries(serviceTimes)
+  .filter(([, times]) => Array.isArray(times) && times.length > 0)
+  .map(([day, times]) => [day.charAt(0).toUpperCase() + day.slice(1), times as string[]]);
+
+// Times are rendered in the church's own timezone and locale, not the
+// server's. See lib/format.ts.
+const formats = formatsFrom(settings);
 ---
 
 <Layout>
@@ -233,16 +244,20 @@ const timeZone: string = settings.timezone || 'UTC';
   <section class="section info-strip">
     <div class="container">
       <div class="info-strip__grid">
-        <div class="info-block">
+        <div class="info-block" hidden={serviceDays.length === 0}>
           <h3 class="info-block__title">Gathering Times</h3>
-          <div class="info-block__group">
-            <div class="info-block__day">Sundays</div>
-            {serviceTimes.sunday.map((t: string) => <div class="info-block__time">{t}</div>)}
-          </div>
-          <div class="info-block__group">
-            <div class="info-block__day">Wednesdays</div>
-            {serviceTimes.wednesday.map((t: string) => <div class="info-block__time">{t}</div>)}
-          </div>
+          {/*
+            Rendered over whatever days this church actually meets. Naming
+            Sunday and Wednesday in markup assumed one schedule and left a
+            Saturday-worship church unable to express its own — and crashed
+            outright for any church that had not filled both in.
+          */}
+          {serviceDays.map(([day, times]) => (
+            <div class="info-block__group">
+              <div class="info-block__day">{day}</div>
+              {times.map((t) => <div class="info-block__time">{t}</div>)}
+            </div>
+          ))}
           <div class="info-block__actions">
             <a href="/im-new" class="btn btn--primary">Plan My Visit</a>
           </div>
