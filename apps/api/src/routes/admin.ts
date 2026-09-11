@@ -47,6 +47,10 @@ async function ensurePagesImageColumn(env: Env): Promise<void> {
 	if (!cols.has('gallery_image_1')) stmts.push(env.DB.prepare('ALTER TABLE pages ADD COLUMN gallery_image_1 TEXT'));
 	if (!cols.has('gallery_image_2')) stmts.push(env.DB.prepare('ALTER TABLE pages ADD COLUMN gallery_image_2 TEXT'));
 	if (!cols.has('gallery_image_3')) stmts.push(env.DB.prepare('ALTER TABLE pages ADD COLUMN gallery_image_3 TEXT'));
+	// Which pages are ministries, and in what order — a church's own choice
+	// rather than a list fixed in code. See routes/public.ts handleMinistries.
+	if (!cols.has('is_ministry')) stmts.push(env.DB.prepare('ALTER TABLE pages ADD COLUMN is_ministry INTEGER DEFAULT 0'));
+	if (!cols.has('sort_order')) stmts.push(env.DB.prepare('ALTER TABLE pages ADD COLUMN sort_order INTEGER DEFAULT 0'));
 	if (stmts.length) await env.DB.batch(stmts);
 }
 
@@ -144,7 +148,7 @@ export async function handleAdmin(
 	if (path === '/api/admin/pages' && method === 'GET') {
 		await ensurePagesImageColumn(env);
 		const { results } = await env.DB.prepare(
-			'SELECT slug, title, sub_title, subtext, image_url, image_focal_x, image_focal_y, status, updated_at FROM pages ORDER BY slug ASC'
+			'SELECT slug, title, sub_title, subtext, image_url, image_focal_x, image_focal_y, is_ministry, sort_order, status, updated_at FROM pages ORDER BY sort_order ASC, slug ASC'
 		).all();
 		return json({ data: results });
 	}
@@ -170,11 +174,25 @@ export async function handleAdmin(
 			const gallery_image_1 = body.gallery_image_1 ?? null;
 			const gallery_image_2 = body.gallery_image_2 ?? null;
 			const gallery_image_3 = body.gallery_image_3 ?? null;
+			const is_ministry = body.is_ministry ? 1 : 0;
+			const sort_order = Number.isFinite(Number(body.sort_order)) ? Number(body.sort_order) : 0;
 			const status = body.status ?? 'published';
+
+			// A slug becomes a public URL, so keep it to something that can
+			// safely be one. Which slugs the website's own routes reserve is
+			// enforced by the admin panel, which knows that route table.
+			if (!/^[a-z0-9][a-z0-9-]*$/.test(pageMatch[1])) {
+				return err('Slug may contain only lowercase letters, numbers and hyphens');
+			}
+
+			// INSERT OR REPLACE writes a whole row: every column the editor
+			// does not send would be reset to its default. is_ministry and
+			// sort_order are listed here for exactly that reason — omitting
+			// them would silently un-flag a ministry on every save.
 			await env.DB.prepare(
-				`INSERT OR REPLACE INTO pages (slug, title, sub_title, subtext, content_html, image_url, image_focal_x, image_focal_y, gallery_image_1, gallery_image_2, gallery_image_3, status, updated_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch())`
-			).bind(pageMatch[1], title, sub_title, subtext, content_html, image_url, image_focal_x, image_focal_y, gallery_image_1, gallery_image_2, gallery_image_3, status).run();
+				`INSERT OR REPLACE INTO pages (slug, title, sub_title, subtext, content_html, image_url, image_focal_x, image_focal_y, gallery_image_1, gallery_image_2, gallery_image_3, is_ministry, sort_order, status, updated_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch())`
+			).bind(pageMatch[1], title, sub_title, subtext, content_html, image_url, image_focal_x, image_focal_y, gallery_image_1, gallery_image_2, gallery_image_3, is_ministry, sort_order, status).run();
 			return json({ success: true });
 		}
 		if (method === 'DELETE') {

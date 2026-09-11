@@ -1,0 +1,14 @@
+/**
+ * ChurchKit admin panel — Wrangler Pages configuration template.
+ * Copy to wrangler.jsonc and replace every <PLACEHOLDER>.
+ *
+ * Access control is NOT configured here: put a Cloudflare Access
+ * application in front of this hostname, and set its audience tag as
+ * CF_ACCESS_AUD on the API worker. Without both, the admin API refuses
+ * every request.
+ */
+{
+	"name": "<SLUG>-admin",
+	"compatibility_date": "2026-05-01",
+	"pages_build_output_dir": "dist"
+}

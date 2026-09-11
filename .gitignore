@@ -33,3 +33,6 @@ coverage/
 # Per-deployment Wrangler config — copy from the .example files
 apps/*/wrangler.jsonc
 apps/*/wrangler.toml
+
+# Admin build-time config
+apps/admin/.env
