@@ -1,7 +1,8 @@
 /**
  * ChurchKit API — Wrangler configuration template.
  *
- * Copy to wrangler.jsonc and replace every <PLACEHOLDER>. The real file is
+ * Copy to wrangler.jsonc and fill in the bracketed values, or let
+ * `churchkit provision` render it for you. The real file is
  * gitignored: it names your database, bucket and domain, which are yours,
  * not the project's.
  *

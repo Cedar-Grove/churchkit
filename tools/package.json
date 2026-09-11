@@ -4,5 +4,11 @@
   "private": true,
   "license": "Apache-2.0",
   "description": "Provisioning and deployment tooling for ChurchKit instances.",
-  "type": "module"
+  "type": "module",
+  "bin": {
+    "churchkit": "src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.mjs\""
+  }
 }

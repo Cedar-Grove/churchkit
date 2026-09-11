@@ -1,6 +1,7 @@
 /**
  * ChurchKit website — Wrangler configuration template.
- * Copy to wrangler.jsonc and replace every <PLACEHOLDER>.
+ * Copy to wrangler.jsonc and fill in the bracketed values, or let
+ * `churchkit provision` render it for you.
  */
 {
 	"compatibility_date": "2026-05-01",
