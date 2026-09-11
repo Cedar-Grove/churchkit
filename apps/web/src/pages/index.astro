@@ -1,0 +1,417 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { getHome, getEvents, getCarousel } from '../lib/api';
+import { env } from 'cloudflare:workers';
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+
+const apiBase = env.API_BASE;
+const [home, events, carouselResult] = await Promise.allSettled([
+  getHome(apiBase),
+  getEvents(apiBase),
+  getCarousel(apiBase),
+]);
+
+const { settings, latestSermonWithVideo, featuredEvent, liveStream } =
+  home.status === 'fulfilled' ? home.value : { settings: {}, latestSermonWithVideo: null, featuredEvent: null, liveStream: null };
+
+const upcomingEvents =
+  events.status === 'fulfilled' ? events.value.slice(0, 3) : [];
+
+const carouselSlides: any[] =
+  carouselResult.status === 'fulfilled' ? carouselResult.value : [];
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone });
+}
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function formatEventDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return {
+    month: d.toLocaleDateString('en-US', { month: 'short', timeZone }).toUpperCase(),
+    day: d.toLocaleDateString('en-US', { day: 'numeric', timeZone }),
+    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone }),
+    weekday: d.toLocaleDateString('en-US', { weekday: 'long', timeZone }),
+  };
+}
+
+// No invented service times. A wrong time published in a church's own
+// voice sends visitors to a locked building; an empty section just says
+// nothing until staff fill it in.
+const serviceTimes = settings.service_times ?? {};
+
+// Times are rendered in the church's own timezone, not the server's.
+const timeZone: string = settings.timezone || 'UTC';
+---
+
+<Layout>
+  {liveStream?.isLive && (
+    <a href={liveStream.url} target="_blank" rel="noopener" class="live-banner">
+      <svg width="9" height="9" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg>
+      We're live right now — click here to watch the live stream
+    </a>
+  )}
+  <Nav />
+
+  <section class="hero" id="hero">
+    <div class="hero__left">
+      {carouselSlides.length > 0 ? (
+        <>
+          <div class="hero__slides">
+            {carouselSlides.map((slide: any, i: number) => (
+              <div class={`hero__slide${i === 0 ? ' hero__slide--active' : ''}`} data-slide={i}>
+                {slide.image_url
+                  ? <div class="hero__bg" style={`background-image: url('${slide.image_url}'); background-size: cover; background-position: center;`}></div>
+                  : <div class="hero__bg hero__bg--1"></div>
+                }
+                <div class="hero__overlay"></div>
+                {!slide.image_url && (
+                  <div class="container hero__content">
+                    {slide.headline && <h1 class="hero__title">{slide.headline}</h1>}
+                    {slide.subtext && <p class="hero__body">{slide.subtext}</p>}
+                    {slide.button_label && slide.button_link && (
+                      <div class="hero__actions">
+                        <a href={slide.button_link} class="btn btn--accent">{slide.button_label}</a>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div class="hero__dots">
+            {carouselSlides.map((_: any, i: number) => (
+              <button class={`hero__dot${i === 0 ? ' hero__dot--active' : ''}`} data-target={i} aria-label={`Slide ${i + 1}`}></button>
+            ))}
+          </div>
+          <button class="hero__arrow hero__arrow--prev" id="hero-prev" aria-label="Previous slide">&#8249;</button>
+          <button class="hero__arrow hero__arrow--next" id="hero-next" aria-label="Next slide">&#8250;</button>
+        </>
+      ) : (
+        <div class="hero__slide hero__slide--active">
+          <div class="hero__bg hero__bg--1"></div>
+          <div class="hero__overlay"></div>
+          <div class="container hero__content">
+            {/*
+              With no carousel slides configured this falls back to the
+              church's own name and tagline — never to invented copy about
+              service times or what a visit is like.
+            */}
+            <h1 class="hero__title">{settings.church_name ?? ''}</h1>
+            {settings.tagline && <p class="hero__body">{settings.tagline}</p>}
+            <div class="hero__actions">
+              <a href="/im-new" class="btn btn--accent">Plan Your Visit</a>
+              <a href="/about" class="btn btn--outline-white">Learn More</a>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+    {settings.hero_image_url && (
+      <div class="hero__right">
+        <img src={settings.hero_image_url} alt={settings.church_name ?? ''} class="hero__photo" />
+      </div>
+    )}
+  </section>
+
+  {featuredEvent && (
+    <div class="featured-strip">
+      <div class="container featured-strip__inner">
+        <div class="featured-strip__left">
+          <div class="featured-strip__label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2l2.55 5.4 5.7.82-4.13 4.15.98 5.93L12 16.7l-5.1 2.8.97-5.93L3.75 9.42l5.7-.82L12 3.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Featured Event</div>
+          <div class="featured-strip__title">{featuredEvent.name || 'Upcoming Event'}</div>
+          {featuredEvent.starts_at && (
+            <div class="featured-strip__meta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.4h16v15H4zM4 10h16M8.6 2.8v4.6M15.4 2.8v4.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {formatDate(featuredEvent.starts_at)}</div>
+          )}
+        </div>
+        {featuredEvent.source === 'registrations' && (
+          <a href={featuredEvent.registration_url} class="btn btn--white">Register Now →</a>
+        )}
+      </div>
+    </div>
+  )}
+
+  {latestSermonWithVideo && (
+    <section class="section latest-sermon">
+      <div class="container">
+        <div class="latest-sermon__inner">
+          <div class="latest-sermon__text">
+            <p class="section__eyebrow">Latest Message</p>
+            <h2 class="section__heading">{latestSermonWithVideo.title || 'Sunday Service'}</h2>
+            {latestSermonWithVideo.series_title && <p class="latest-sermon__series">{latestSermonWithVideo.series_title}</p>}
+            <p class="latest-sermon__date">{formatDate(latestSermonWithVideo.date)}</p>
+            <div class="latest-sermon__actions">
+              <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="btn btn--primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> Watch Now</a>
+              <a href="/media" class="btn btn--outline">Browse All Messages</a>
+            </div>
+          </div>
+          <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="latest-sermon__thumb">
+            {latestSermonWithVideo.thumbnail
+              ? <img src={latestSermonWithVideo.thumbnail} alt={latestSermonWithVideo.title || 'Latest sermon'} loading="lazy" />
+              : <div class="latest-sermon__thumb-placeholder"><svg width="44" height="44" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg></div>
+            }
+            <div class="latest-sermon__play-btn"></div>
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section pillars">
+    <div class="container">
+      <div class="pillars__header">
+        <p class="section__eyebrow">Our Vision</p>
+        <h2 class="section__heading">Believe · Belong · Become</h2>
+      </div>
+      <div class="pillars__grid">
+        <a href="/about" class="pillar">
+          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M7.5 8.2h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3 class="pillar__title">Believe in God</h3>
+          <p class="pillar__body">Our walk of faith starts with knowing God through Jesus, spending time in His Word, in prayer, and in worship.</p>
+        </a>
+        <a href="/about" class="pillar">
+          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 11.5a3.1 3.1 0 100-6.2 3.1 3.1 0 000 6.2zM3.4 19.2c0-3.1 2.5-5.3 5.6-5.3s5.6 2.2 5.6 5.3M15.8 6.1a3.1 3.1 0 010 5.9M17.1 14.4c2.1.6 3.5 2.4 3.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3 class="pillar__title">Belong to Community</h3>
+          <p class="pillar__body">The Christian life isn't meant to be lived alone. We gather together so we can grow together in genuine community.</p>
+        </a>
+        <a href="/about" class="pillar">
+          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20.6a8.6 8.6 0 100-17.2 8.6 8.6 0 000 17.2zM3.4 12h17.2M12 3.4c2.2 2.4 3.4 5.4 3.4 8.6s-1.2 6.2-3.4 8.6c-2.2-2.4-3.4-5.4-3.4-8.6S9.8 5.8 12 3.4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3 class="pillar__title">Become like Jesus</h3>
+          <p class="pillar__body">We become like Jesus when we love and serve who Jesus loves: the Church, our communities, and the world.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {upcomingEvents.length > 0 && (
+    <section class="section events-preview">
+      <div class="container">
+        <div class="events-preview__header">
+          <div>
+            <p class="section__eyebrow">What's Coming Up</p>
+            <h2 class="section__heading">Upcoming Events</h2>
+          </div>
+          <a href="/events" class="btn btn--outline">See All Events</a>
+        </div>
+        <div class="events-preview__grid">
+          {upcomingEvents.map((event: any) => {
+            const d = formatEventDate(event.starts_at);
+            return (
+              <div class="event-card">
+                <div class="event-card__date">
+                  <span class="event-card__month">{d.month}</span>
+                  <span class="event-card__day">{d.day}</span>
+                </div>
+                <div class="event-card__info">
+                  <h3 class="event-card__title">{event.name}</h3>
+                  <p class="event-card__when">{d.weekday} · {d.time}</p>
+                  {event.description && (() => {
+                    const text = stripHtml(event.description);
+                    return <p class="event-card__desc">{text.substring(0, 100)}{text.length > 100 ? '...' : ''}</p>;
+                  })()}
+                </div>
+                {event.source === 'registrations' ? (
+                  <a href={event.registration_url} class="event-card__btn">Register →</a>
+                ) : (
+                  <span class="event-card__btn event-card__btn--muted">Free</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section info-strip">
+    <div class="container">
+      <div class="info-strip__grid">
+        <div class="info-block">
+          <h3 class="info-block__title">Gathering Times</h3>
+          <div class="info-block__group">
+            <div class="info-block__day">Sundays</div>
+            {serviceTimes.sunday.map((t: string) => <div class="info-block__time">{t}</div>)}
+          </div>
+          <div class="info-block__group">
+            <div class="info-block__day">Wednesdays</div>
+            {serviceTimes.wednesday.map((t: string) => <div class="info-block__time">{t}</div>)}
+          </div>
+          <div class="info-block__actions">
+            <a href="/im-new" class="btn btn--primary">Plan My Visit</a>
+          </div>
+        </div>
+        <div class="info-block">
+          <h3 class="info-block__title">Find Us</h3>
+          <div class="info-block__address">
+            {settings.address && <p>{settings.address}</p>}
+            {settings.phone && <p style="margin-top: 12px;">{settings.phone}</p>}
+            {settings.email && <p>{settings.email}</p>}
+          </div>
+          <div class="info-block__actions">
+            {settings.address && (
+              <a href={`https://maps.google.com/?q=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener" class="btn btn--outline">Get Directions</a>
+            )}
+          </div>
+        </div>
+        <div class="info-block">
+          <h3 class="info-block__title">Connect With Us</h3>
+          <p class="info-block__connect-body">New here? We'd love to meet you. Fill out a connect card and our team will reach out.</p>
+          <div class="info-block__actions">
+            <a href="/connect-card" class="btn btn--primary">Fill Out a Connect Card</a>
+            <a href="/im-new" class="btn btn--outline">I'm New Here</a>
+            <a href="/prayer-request" class="btn btn--outline">Share a Prayer Request</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<style>
+  .hero { display: flex; height: 580px; overflow: hidden; background: var(--brand); }
+  .hero__left { position: relative; width: 50%; flex-shrink: 0; }
+  .hero__right { width: 50%; flex-shrink: 0; overflow: hidden; }
+  .hero__photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero__slides { position: relative; width: 100%; height: 100%; }
+  .hero__slide { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; transition: opacity 0.8s ease; pointer-events: none; }
+  .hero__slide--active { opacity: 1; pointer-events: auto; }
+  .hero__bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+  .hero__bg--1 { background: var(--brand); }
+  .hero__overlay { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.04), transparent 60%); }
+  .hero__content { position: relative; z-index: 2; max-width: 600px; }
+  .hero__title { font-size: clamp(56px, 8.4vw, 90px); color: white; font-weight: 600; line-height: 1.08; letter-spacing: -1px; margin-bottom: 18px; }
+  .hero__body { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.78); line-height: 1.6; font-weight: 300; margin-bottom: 32px; max-width: 480px; }
+  .hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn--outline-white { border: 2px solid rgba(255,255,255,0.5); color: white; background: transparent; }
+  .btn--outline-white:hover { border-color: white; background: rgba(255,255,255,0.08); }
+  .hero__dots { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
+  .hero__dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.35); border: none; cursor: pointer; transition: all 0.2s; padding: 0; }
+  .hero__dot--active { background: var(--accent); width: 24px; border-radius: 4px; }
+  .hero__arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 22px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; line-height: 1; }
+  .hero__arrow:hover { background: rgba(255,255,255,0.22); }
+  .hero__arrow--prev { left: 24px; }
+  .hero__arrow--next { right: 24px; }
+  .live-banner {
+    display: block;
+    background: #c0392b;
+    color: white;
+    text-align: center;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    text-decoration: none;
+  }
+  .live-banner:hover { background: #a8321f; }
+  .featured-strip { background: var(--accent); padding: 36px 0; }
+  .featured-strip__inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .featured-strip__label { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink-faint); margin-bottom: 6px; }
+  .featured-strip__title { font-family: var(--font-heading); font-size: 36px; color: var(--ink); font-weight: 600; }
+  .featured-strip__meta { display: inline-flex; align-items: center; gap: 8px; font-size: 21px; color: var(--ink-soft); margin-top: 6px; }
+  .btn--white { background: white; color: var(--brand); font-weight: 700; white-space: nowrap; }
+  .btn--white:hover { background: var(--brand-faint); }
+  .latest-sermon { background: var(--white); }
+  .latest-sermon__inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  .latest-sermon__series { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .latest-sermon__date { font-size: 13px; color: var(--ink-faint); margin-bottom: 24px; }
+  .latest-sermon__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .latest-sermon__thumb { position: relative; aspect-ratio: 16/10; border-radius: 16px; overflow: hidden; display: block; background: var(--brand); cursor: pointer; }
+  .latest-sermon__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+  .latest-sermon__thumb:hover img { transform: scale(1.04); }
+  .latest-sermon__thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; color: rgba(255,255,255,0.4); }
+  .latest-sermon__play-btn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); transition: background 0.2s; }
+  .latest-sermon__thumb:hover .latest-sermon__play-btn { background: rgba(0,0,0,0.35); }
+  .latest-sermon__play-btn::after { content: ''; width: 56px; height: 56px; background: rgba(255,255,255,0.92); border-radius: 50%; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 14 14'%3E%3Cpath d='M3.6 2.3L11.4 7L3.6 11.7V2.3Z' fill='%23273920'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+  .pillars { background: var(--brand-faint); }
+  .pillars__header { text-align: center; max-width: 560px; margin: 0 auto 48px; }
+  .pillars__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .pillar { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 36px 28px; text-align: center; text-decoration: none; transition: all 0.2s; }
+  .pillar:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: var(--brand-light); }
+  .pillar__icon { color: var(--brand-mid); margin-bottom: 16px; display: flex; justify-content: center; }
+  .pillar__title { font-family: var(--font-heading); font-size: 31px; color: var(--brand); font-weight: 600; margin-bottom: 12px; }
+  .pillar__body { font-family: var(--font-heading); font-size: 20px; color: var(--ink-soft); line-height: 1.7; font-weight: 300; }
+  .events-preview { background: white; }
+  .events-preview__header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+  .events-preview__grid { display: flex; flex-direction: column; gap: 14px; }
+  .event-card { display: flex; align-items: center; gap: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; transition: all 0.2s; }
+  .event-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: var(--brand-light); }
+  .event-card__date { width: 56px; height: 56px; background: var(--brand-pale); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(45,74,43,0.1); }
+  .event-card__month { font-size: 9px; font-weight: 700; color: var(--brand-mid); letter-spacing: 0.5px; }
+  .event-card__day { font-family: var(--font-heading); font-size: 22px; color: var(--brand); font-weight: 600; line-height: 1; }
+  .event-card__info { flex: 1; min-width: 0; }
+  .event-card__title { font-family: var(--font-heading); font-size: 25px; color: var(--brand); font-weight: 600; margin-bottom: 4px; }
+  .event-card__when { font-size: 13px; color: var(--ink-faint); margin-bottom: 4px; }
+  .event-card__desc { font-size: 18px; color: var(--ink-soft); font-weight: 300; }
+  .event-card__btn { background: var(--brand); color: white; padding: 9px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0; text-decoration: none; transition: background 0.15s; }
+  .event-card__btn:hover { background: var(--brand-mid); }
+  .event-card__btn--muted { background: var(--brand-faint); color: var(--brand-mid); cursor: default; }
+  .info-strip { background: var(--brand-faint); }
+  .info-strip__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .info-block { display: flex; flex-direction: column; }
+  .info-block__title { font-family: var(--font-heading); font-size: 31px; color: var(--brand); font-weight: 600; margin-bottom: 20px; }
+  .info-block__group { margin-bottom: 16px; }
+  .info-block__day { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-mid); margin-bottom: 6px; }
+  .info-block__time { font-size: 20px; color: var(--ink-soft); margin-bottom: 4px; }
+  .info-block__address { font-size: 20px; color: var(--ink-soft); line-height: 1.8; }
+  .info-block__connect-body { font-size: 20px; color: var(--ink-soft); line-height: 1.8; }
+  .info-block__actions { margin-top: auto; padding-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .info-block .btn { display: flex; justify-content: center; }
+  @media (max-width: 900px) {
+    .latest-sermon__inner { grid-template-columns: 1fr; }
+    .latest-sermon__thumb { order: -1; }
+    .pillars__grid { grid-template-columns: 1fr; }
+    .info-strip__grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+  @media (max-width: 768px) {
+    .hero { height: auto; flex-direction: column; }
+    .hero__left { width: 100%; height: 420px; }
+    .hero__right { width: 100%; height: 260px; }
+    .hero__arrow { display: none; }
+    .events-preview__header { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .event-card { flex-wrap: wrap; }
+  }
+</style>
+
+<script>
+  const slides = document.querySelectorAll<HTMLElement>('.hero__slide');
+  const dots = document.querySelectorAll<HTMLElement>('.hero__dot');
+  if (slides.length > 1) {
+    let current = 0;
+    let timer: ReturnType<typeof setInterval>;
+    function goTo(index: number) {
+      slides[current].classList.remove('hero__slide--active');
+      dots[current].classList.remove('hero__dot--active');
+      current = (index + slides.length) % slides.length;
+      slides[current].classList.add('hero__slide--active');
+      dots[current].classList.add('hero__dot--active');
+    }
+    function startTimer() { timer = setInterval(() => goTo(current + 1), 5000); }
+    function resetTimer() { clearInterval(timer); startTimer(); }
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => { goTo(parseInt(dot.dataset.target || '0')); resetTimer(); });
+    });
+    document.getElementById('hero-prev')?.addEventListener('click', () => { goTo(current - 1); resetTimer(); });
+    document.getElementById('hero-next')?.addEventListener('click', () => { goTo(current + 1); resetTimer(); });
+    let touchStartX = 0;
+    const hero = document.getElementById('hero');
+    hero?.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    hero?.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) { goTo(diff > 0 ? current + 1 : current - 1); resetTimer(); }
+    });
+    startTimer();
+  }
+</script>

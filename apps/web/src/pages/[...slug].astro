@@ -1,0 +1,85 @@
+---
+/**
+ * Generic page renderer.
+ *
+ * Any published page in this church's database gets a URL at its slug, so a
+ * church adds "Our History" or "Missions" in the admin panel without anyone
+ * editing this repository. That is what makes the site reusable: pages are
+ * content, not code.
+ *
+ * Nothing here supplies fallback copy. A page that does not exist 404s; a
+ * page with no content renders empty. Inventing text would publish words
+ * this church never wrote, in its own voice, on its own domain.
+ */
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { getPage } from '../lib/api';
+import { RESERVED_SLUGS } from '../lib/nav';
+import { env } from 'cloudflare:workers';
+
+const slug = (Astro.params.slug ?? '').replace(/^\/+|\/+$/g, '');
+
+// A church could name a page "give" and shadow the real giving route. The
+// site's own routes win, so a stray page cannot break the site.
+if (RESERVED_SLUGS.has(slug)) return Astro.rewrite('/404');
+
+let page: any = null;
+try {
+  page = await getPage(slug, env.API_BASE);
+} catch {}
+
+if (!page || page.status !== 'published') return Astro.rewrite('/404');
+---
+
+<Layout title={page.title} description={page.subtext ?? undefined}>
+  <Nav />
+
+  <section class="page-header">
+    <div class="container">
+      {page.sub_title && <p class="page-header__eyebrow">{page.sub_title}</p>}
+      <h1 class="page-header__title">{page.title}</h1>
+      {page.subtext && <p class="page-header__body">{page.subtext}</p>}
+    </div>
+  </section>
+
+  {page.image_url && (
+    <div class="page-hero">
+      <img
+        src={page.image_url}
+        alt={page.title}
+        style={`object-position: ${(page.image_focal_x ?? 0.5) * 100}% ${(page.image_focal_y ?? 0.5) * 100}%`}
+      />
+    </div>
+  )}
+
+  {page.content_html && (
+    <section class="section">
+      <div class="container--narrow">
+        <div class="prose" set:html={page.content_html} />
+      </div>
+    </section>
+  )}
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header { padding: 64px 0 32px; background: var(--brand-faint); }
+  .page-header__eyebrow {
+    font-family: var(--font-display); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 3px; color: var(--brand-mid);
+    margin-bottom: 12px;
+  }
+  .page-header__title { font-family: var(--font-heading); font-size: 56px; color: var(--brand); }
+  .page-header__body {
+    font-family: var(--font-heading); font-size: 23px; color: var(--ink-soft);
+    margin-top: 12px; max-width: 640px;
+  }
+  .page-hero { max-height: 420px; overflow: hidden; }
+  .page-hero img { width: 100%; height: 420px; object-fit: cover; }
+  @media (max-width: 768px) {
+    .page-header__title { font-size: 40px; }
+    .page-hero img { height: 240px; }
+  }
+</style>

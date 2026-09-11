@@ -1,0 +1,32 @@
+---
+/**
+ * A decoy field. Hidden from sight and from screen readers, and skipped by
+ * keyboard navigation, so no real visitor can fill it in — but a bot parsing
+ * the HTML sees an ordinary text input and completes it.
+ *
+ * The API drops any submission that arrives with `website` set, and answers
+ * with a normal success response so the bot doesn't learn to omit it. See
+ * HONEYPOT_FIELDS in cedar-grove-api's src/lib/formGuard.ts.
+ *
+ * All four forms serialize with FormData, so this is picked up automatically
+ * with no change to their submit handlers.
+ */
+---
+
+<div class="hp-field" aria-hidden="true">
+  <label for="website">Website</label>
+  <input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+</div>
+
+<style>
+  /* Not `display: none` or `hidden`: some bots skip fields hidden that
+     obviously. Positioned off-screen instead, which is invisible in exactly
+     the same way to a person but still looks like a live field in the DOM. */
+  .hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+</style>

@@ -1,0 +1,81 @@
+---
+import { getSettings, getCapabilities } from '../lib/api';
+import { env } from 'cloudflare:workers';
+
+const [settings, capabilities] = await Promise.all([
+  getSettings(env.API_BASE).catch(() => ({} as any)),
+  getCapabilities(env.API_BASE).catch(() => ({} as any)),
+]);
+
+const churchName: string = settings.church_name ?? '';
+const address: string = settings.address ?? '';
+const phone: string = settings.phone ?? '';
+const email: string = settings.email ?? '';
+
+// Only link what this church actually has. An empty social icon row or a
+// giving button that goes nowhere is worse than no row at all.
+const social: [string, string][] = Object.entries(
+  (settings.social ?? {}) as Record<string, string>
+).filter(([, url]) => !!url) as [string, string][];
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <img src="/images/logo-white.png" alt={churchName} class="footer__logo" />
+      {settings.tagline && <p class="footer__tagline">{settings.tagline}</p>}
+    </div>
+
+    <div class="footer__col">
+      {address && <p class="footer__line">{address}</p>}
+      {phone && <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`} class="footer__line">{phone}</a>}
+      {email && <a href={`mailto:${email}`} class="footer__line">{email}</a>}
+    </div>
+
+    <div class="footer__col">
+      <a href="/about" class="footer__line">About</a>
+      {capabilities.sermons && <a href="/media" class="footer__line">Media</a>}
+      {capabilities.events && <a href="/events" class="footer__line">Events</a>}
+      <a href="/contact" class="footer__line">Contact</a>
+      {settings.giving_url && <a href="/give" class="footer__line">Give</a>}
+    </div>
+
+    {social.length > 0 && (
+      <div class="footer__col">
+        {social.map(([name, url]) => (
+          <a href={url} class="footer__line" rel="noopener noreferrer" target="_blank">
+            {name.charAt(0).toUpperCase() + name.slice(1)}
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <div class="container footer__legal">
+    <span>&copy; {new Date().getFullYear()} {churchName}</span>
+    <span class="footer__legal-links">
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+    </span>
+  </div>
+</footer>
+
+<style>
+  .footer { background: var(--brand); color: rgba(255, 255, 255, 0.72); padding: 56px 0 24px; }
+  .footer__inner { display: flex; flex-wrap: wrap; gap: 48px; justify-content: space-between; }
+  .footer__brand { max-width: 280px; }
+  .footer__logo { height: 56px; width: auto; margin-bottom: 16px; }
+  .footer__tagline { font-family: var(--font-heading); font-size: 19px; line-height: 1.5; }
+  .footer__col { display: flex; flex-direction: column; gap: 8px; }
+  .footer__line { font-size: 14px; color: rgba(255, 255, 255, 0.72); text-decoration: none; }
+  .footer__line:hover { color: var(--white); }
+  .footer__legal {
+    display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;
+    margin-top: 40px; padding-top: 20px; font-size: 13px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .footer__legal-links { display: flex; gap: 16px; }
+  @media (max-width: 768px) {
+    .footer__inner { gap: 32px; }
+  }
+</style>

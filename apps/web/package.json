@@ -1,6 +1,24 @@
 {
   "name": "@churchkit/web",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "description": "ChurchKit website — Astro on Cloudflare Workers.",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro build && astro preview",
+    "deploy": "astro build && wrangler deploy",
+    "typecheck": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.3.0",
+    "astro": "^6.2.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.87.0"
+  },
+  "overrides": { "vite": "^7" }
 }

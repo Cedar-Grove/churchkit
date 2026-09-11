@@ -1,0 +1,89 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { getPage } from '../../lib/api';
+import { env } from 'cloudflare:workers';
+
+const { slug } = Astro.params;
+
+let page: any = null;
+try {
+  page = await getPage(slug!, env.API_BASE);
+} catch {}
+
+if (!page) {
+  return Astro.redirect('/ministries');
+}
+---
+
+<Layout title={page.title} description={page.subtext ?? undefined}>
+  <Nav />
+
+  <section class="page-header">
+    {page.image_url && (
+      <div
+        class="page-header__bg"
+        style={`background-image: url('${page.image_url}'); background-position: ${page.image_focal_x ?? 50}% ${page.image_focal_y ?? 50}%;`}
+      ></div>
+    )}
+    <div class="page-header__overlay"></div>
+    <div class="container page-header__content">
+      <p class="page-header__eyebrow">Ministries</p>
+      <h1 class="page-header__title">{page.title}</h1>
+      {page.sub_title && <p class="page-header__sub-title">{page.sub_title}</p>}
+      {page.subtext && <p class="page-header__subtitle">{page.subtext}</p>}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container--narrow">
+      <div class="prose" set:html={page.content_html} />
+    </div>
+  </section>
+
+  {(page.gallery_image_1 || page.gallery_image_2 || page.gallery_image_3) && (
+    <section class="ministry-gallery-section">
+      <div class="ministry-gallery">
+        {[page.gallery_image_1, page.gallery_image_2, page.gallery_image_3].filter(Boolean).map((src: string) => (
+          <img src={src} alt="" class="ministry-gallery__image" loading="lazy" />
+        ))}
+      </div>
+    </section>
+  )}
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header { position: relative; background: var(--brand); padding: 130px 0 108px; overflow: hidden; }
+  .page-header__bg { position: absolute; inset: 0; background-size: cover; }
+  .page-header__overlay { position: absolute; inset: 0; background: rgba(39,57,32,0.8); }
+  .page-header__content { position: relative; z-index: 1; }
+  .page-header__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; color: var(--accent); margin-bottom: 12px; }
+  .page-header__title { font-size: clamp(50px, 7vw, 73px); font-weight: 600; color: white; line-height: 1.1; margin-bottom: 12px; }
+  .page-header__sub-title { font-family: 'Playfair Display', serif; font-size: 31px; color: rgba(255,255,255,0.9); font-weight: 600; margin-top: 10px; margin-bottom: 6px; }
+  .page-header__subtitle { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.7); font-weight: 300; margin-top: 8px; }
+
+  .prose :global(h1) { font-family: var(--font-heading); font-size: 48px; color: var(--brand); margin: 40px 0 16px; }
+  .prose :global(h2) { font-family: var(--font-heading); font-size: 39px; color: var(--brand); margin: 36px 0 14px; }
+  .prose :global(h3) { font-family: var(--font-heading); font-size: 31px; color: var(--brand); margin: 28px 0 10px; }
+  .prose :global(h4) { font-family: var(--font-heading); font-size: 27px; color: var(--brand); margin: 24px 0 8px; }
+  .prose :global(h5) { font-family: var(--font-heading); font-size: 24px; color: var(--brand); margin: 20px 0 8px; }
+  .prose :global(h6) { font-family: var(--font-heading); font-size: 22px; color: var(--brand); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .prose :global(p) { font-family: var(--font-heading); font-size: 22px; line-height: 1.8; color: var(--ink-soft); font-weight: 300; margin-bottom: 20px; }
+  .prose :global(ul), .prose :global(ol) { font-family: var(--font-heading); font-size: 22px; line-height: 1.8; color: var(--ink-soft); font-weight: 300; margin-bottom: 20px; padding-left: 24px; }
+  .prose :global(li) { margin-bottom: 6px; }
+  .prose :global(blockquote) { margin: 24px 0; padding: 12px 24px; border-left: 4px solid var(--accent); background: var(--brand-faint); font-style: italic; color: var(--ink-soft); }
+  .prose :global(img) { max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0; }
+  .prose :global(a) { color: var(--brand); text-decoration: underline; }
+  .prose :global(strong) { font-weight: 600; color: var(--brand); }
+  .prose :global(u) { text-decoration: underline; }
+  .prose :global(s), .prose :global(strike) { text-decoration: line-through; }
+
+  .ministry-gallery-section { padding-bottom: 96px; }
+  .ministry-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ministry-gallery__image { width: 100%; height: 440px; object-fit: cover; display: block; }
+
+  @media (max-width: 900px) { .ministry-gallery { grid-template-columns: 1fr; } .ministry-gallery__image { height: 320px; } }
+</style>

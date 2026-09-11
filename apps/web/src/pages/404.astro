@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<Layout title="Page Not Found">
+  <Nav />
+  <section class="section">
+    <div class="container--narrow" style="text-align: center; padding: 80px 0;">
+      <h1 class="section__heading">Page Not Found</h1>
+      <p class="section__body">We couldn't find that page.</p>
+      <p style="margin-top: 32px;"><a href="/" class="btn btn--primary">Back to Home</a></p>
+    </div>
+  </section>
+  <Footer />
+</Layout>

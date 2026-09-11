@@ -1,0 +1,275 @@
+---
+import { getSettings, getMinistries, getCapabilities } from '../lib/api';
+import { buildNav } from '../lib/nav';
+import { env } from 'cloudflare:workers';
+
+const [settings, ministries, capabilities] = await Promise.all([
+  getSettings(env.API_BASE).catch(() => ({})),
+  getMinistries(env.API_BASE).catch(() => []),
+  getCapabilities(env.API_BASE).catch(() => ({})),
+]);
+
+// The menu is derived, never hardcoded: ministries come from the pages this
+// church published, and a section whose feature is unconfigured is left out
+// rather than linking somewhere empty. A church that wants a different menu
+// sets `nav_links` in the admin panel and this uses that instead.
+const links = buildNav({ settings, ministries, capabilities });
+
+const churchName: string = settings.church_name ?? '';
+const phone: string = settings.phone ?? '';
+const givingUrl: string = settings.giving_url ?? '';
+
+const currentPath = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+---
+
+<div class="utility">
+  <div class="container utility__inner">
+    <p class="caps utility__hours">{settings.tagline ?? ''}</p>
+    {phone && <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`} class="caps utility__link">{phone}</a>}
+  </div>
+</div>
+
+<header class="mast">
+  <div class="container mast__inner">
+    <a href="/" class="mast__logo" aria-label={`${churchName} — home`}>
+      <img src="/images/logo-dark.png" alt={churchName} width="1000" height="331" />
+    </a>
+
+    <nav class="mast__nav" aria-label="Main">
+      {links.map(link => (
+        link.children ? (
+          <div class="drop">
+            <button
+              type="button"
+              class:list={['caps', 'mast__link', 'drop__btn', isActive(link.href) && 'mast__link--active']}
+              aria-expanded="false"
+              aria-controls={`drop-${link.label}`}
+              data-drop-btn
+            >
+              {link.label}
+              <svg class="drop__caret" width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <div class="drop__menu" id={`drop-${link.label}`} data-drop-menu hidden>
+              {link.children.map(child => (
+                <a href={child.href} class:list={['drop__link', currentPath === child.href && 'drop__link--active']}>{child.label}</a>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <a href={link.href} class:list={['caps', 'mast__link', isActive(link.href) && 'mast__link--active']}>{link.label}</a>
+        )
+      ))}
+      {givingUrl && <a href="/give" class="mast__cta">Give</a>}
+    </nav>
+
+    <div class="mast__mobile-actions">
+      {givingUrl && <a href="/give" class="mast__cta mast__cta--mobile">Give</a>}
+      <button type="button" class="burger" id="nav-toggle" aria-expanded="false" aria-controls="nav-mobile" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="mobile" id="nav-mobile" hidden>
+    <nav aria-label="Mobile">
+      {links.map(link => (
+        <>
+          <a href={link.href} class="mobile__link">
+            {link.label}
+            {link.children && (
+              <svg width="14" height="14" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M7 3.5L12.5 9L7 14.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            )}
+          </a>
+          {link.children && link.children.map(child => (
+            <a href={child.href} class="mobile__link mobile__link--sub">{child.label}</a>
+          ))}
+        </>
+      ))}
+      <a href="/im-new" class="mobile__link">I'm New</a>
+    </nav>
+    <p class="mobile__address">
+      {settings.address ?? ''}{phone ? ` · ${phone}` : ''}
+    </p>
+  </div>
+</header>
+
+<style>
+  /* Self-contained: this header brings its own accent, rule and deep-green
+     values so it can drop onto the existing Layout without touching it. */
+  .utility,
+  .mast {
+    --hdr-accent: #c69a4e;
+    --hdr-accent-deep: #a87c2e;
+    --hdr-rule: #ddd7cb;
+    --hdr-deep: #1c2a17;
+    --hdr-height: 96px;
+  }
+
+  .caps {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 3.4px;
+  }
+
+  :focus-visible { outline: 3px solid var(--hdr-accent); outline-offset: 3px; }
+
+  .utility { background: var(--brand); padding: 9px 0; }
+  .utility__inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+  .utility__hours { color: rgba(255, 255, 255, 0.62); margin: 0; }
+  .utility__link { color: rgba(255, 255, 255, 0.62); text-decoration: none; }
+  .utility__link:hover { color: #fff; }
+
+  .mast { background: var(--surface); border-bottom: 1px solid var(--hdr-rule); position: sticky; top: 0; z-index: 100; }
+  .mast__inner { height: var(--hdr-height); display: flex; align-items: center; justify-content: space-between; gap: 40px; }
+  .mast__logo { display: flex; align-items: center; flex-shrink: 0; }
+  .mast__logo img { height: 64px; width: auto; }
+
+  .mast__nav { display: flex; align-items: center; gap: 30px; }
+  .mast__link {
+    color: var(--ink-soft);
+    padding: 6px 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .mast__link:hover { color: var(--brand); }
+  .mast__link--active { color: var(--brand); border-bottom-color: var(--brand); }
+
+  /* Give keeps the prominence it had originally: a full-size pill, not a
+     letterspaced text link. */
+  .mast__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    padding: 12px 28px;
+    min-height: 48px;
+    border-radius: 30px;
+    background: var(--hdr-accent);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.18s, color 0.18s;
+  }
+  .mast__cta:hover { background: var(--hdr-accent-deep); color: #fff; }
+  .mast__cta--mobile { margin-left: 0; padding: 10px 22px; min-height: 44px; font-size: 15px; }
+
+  .drop { position: relative; }
+  .drop__btn { display: inline-flex; align-items: center; gap: 7px; }
+  .drop__caret { transition: transform 0.18s; }
+  .drop__btn[aria-expanded='true'] .drop__caret { transform: rotate(180deg); }
+  .drop__menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    min-width: 224px;
+    background: var(--hdr-deep);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+    padding: 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    z-index: 200;
+  }
+  .drop__menu[hidden] { display: none; }
+  .drop__link { padding: 11px 14px; color: rgba(255, 255, 255, 0.86); font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .drop__link:hover, .drop__link--active { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+  .mast__mobile-actions { display: none; align-items: center; gap: 10px; }
+  .burger {
+    width: 44px; height: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 0;
+  }
+  .burger span { display: block; width: 21px; height: 2px; background: var(--brand); transition: transform 0.2s, opacity 0.2s; }
+  .burger[aria-expanded='true'] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .burger[aria-expanded='true'] span:nth-child(2) { opacity: 0; }
+  .burger[aria-expanded='true'] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .mobile { background: var(--hdr-deep); }
+  .mobile[hidden] { display: none; }
+  .mobile nav { display: flex; flex-direction: column; padding: 8px 0; }
+  .mobile__link {
+    display: flex; align-items: center; justify-content: space-between;
+    min-height: 54px; padding: 0 24px;
+    color: rgba(255, 255, 255, 0.9); font-size: 16px; font-weight: 500;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    text-decoration: none;
+  }
+  .mobile__link--sub { padding-left: 44px; font-size: 14px; color: rgba(255, 255, 255, 0.62); min-height: 48px; }
+  .mobile__address { padding: 20px 24px; font-size: 13px; color: rgba(255, 255, 255, 0.5); line-height: 1.7; margin: 0; }
+
+  @media (max-width: 1180px) {
+    .mast__nav { display: none; }
+    .mast__mobile-actions { display: flex; }
+  }
+  @media (max-width: 768px) {
+    .utility__hours { display: none; }
+    .utility__inner { justify-content: center; }
+    .mast { --hdr-height: 60px; }
+    .mast__logo img { height: 40px; }
+  }
+</style>
+
+<script>
+  // Dropdowns: click to open, Escape and outside-click to close, aria-expanded kept honest.
+  const dropBtns = document.querySelectorAll<HTMLButtonElement>('[data-drop-btn]');
+
+  function closeAllDrops(except?: Element) {
+    dropBtns.forEach(btn => {
+      if (btn === except) return;
+      btn.setAttribute('aria-expanded', 'false');
+      btn.parentElement?.querySelector<HTMLElement>('[data-drop-menu]')?.setAttribute('hidden', '');
+    });
+  }
+
+  dropBtns.forEach(btn => {
+    const menu = btn.parentElement?.querySelector<HTMLElement>('[data-drop-menu]');
+    btn.addEventListener('click', () => {
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      closeAllDrops(btn);
+      btn.setAttribute('aria-expanded', String(!open));
+      if (open) menu?.setAttribute('hidden', '');
+      else menu?.removeAttribute('hidden');
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const open = document.querySelector<HTMLButtonElement>('[data-drop-btn][aria-expanded="true"]');
+      closeAllDrops();
+      open?.focus();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (!(e.target as Element)?.closest('.drop')) closeAllDrops();
+  });
+
+  const toggle = document.getElementById('nav-toggle');
+  const mobile = document.getElementById('nav-mobile');
+  toggle?.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!open));
+    toggle.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
+    if (open) mobile?.setAttribute('hidden', '');
+    else mobile?.removeAttribute('hidden');
+  });
+</script>

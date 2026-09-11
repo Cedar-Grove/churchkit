@@ -1,0 +1,98 @@
+---
+import { getSettings } from '../lib/api';
+import { env } from 'cloudflare:workers';
+import '../styles/tokens.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+
+/**
+ * The church's own name and tagline come from the API, never from this
+ * file. A hardcoded default here would put one church's name in another
+ * church's browser tab and search results, so when settings are
+ * unreachable the page falls back to the page title alone.
+ */
+let settings: any = {};
+try {
+  settings = await getSettings(env.API_BASE);
+} catch {}
+
+const churchName: string = settings.church_name ?? '';
+const fullTitle = [title, churchName].filter(Boolean).join(' — ') || title || churchName;
+const metaDescription = description ?? settings.tagline ?? '';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {metaDescription && <meta name="description" content={metaDescription}>}
+  <title>{fullTitle}</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  {/*
+    Web fonts are declared by the brand file, so a church chooses its own
+    typography without editing this layout. ChurchKit bundles no font
+    files: the defaults are open-licensed and loaded from Google Fonts, and
+    a church with commercially licensed faces self-hosts them in its own
+    brand directory rather than redistributing them here.
+  */}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Roboto:wght@300;400;500;700;900&display=swap">
+  <style is:global>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      font-family: var(--font-body);
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      scroll-behavior: smooth;
+    }
+    body { background: var(--surface); color: var(--ink); }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    h1, h2, h3, h4 { font-family: var(--font-heading); line-height: 1.15; letter-spacing: -0.3px; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 64px; }
+    .container--narrow { max-width: 860px; margin: 0 auto; padding: 0 64px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 30px; font-family: var(--font-body); font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; letter-spacing: 0.5px; }
+    .btn--primary { background: var(--brand); color: var(--white); }
+    .btn--primary:hover { background: var(--brand-mid); transform: translateY(-1px); }
+    .btn--secondary { background: rgba(255,255,255,0.12); color: var(--white); border: 1px solid rgba(255,255,255,0.25); }
+    .btn--secondary:hover { background: rgba(255,255,255,0.2); }
+    .btn--outline { background: transparent; color: var(--brand); border: 2px solid var(--brand); }
+    .btn--outline:hover { background: var(--brand-faint); }
+    .btn--accent { background: var(--accent); color: var(--white); }
+    .btn--accent:hover { background: var(--brand-light); transform: translateY(-1px); }
+
+    .section { padding: 72px 0; }
+    .section__eyebrow { font-family: var(--font-display); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px; color: var(--brand-mid); margin-bottom: 12px; }
+    .section__heading { font-family: var(--font-heading); font-size: 56px; font-weight: 600; color: var(--brand); margin-bottom: 16px; }
+    .section__body { font-family: var(--font-heading); font-size: 25px; line-height: 1.75; color: var(--ink-soft); font-weight: 400; }
+
+    .prose { font-family: var(--font-heading); font-size: 21px; line-height: 1.75; color: var(--ink-soft); }
+    .prose h2 { font-size: 38px; color: var(--brand); margin: 32px 0 12px; }
+    .prose h3 { font-size: 28px; color: var(--brand); margin: 24px 0 8px; }
+    .prose p { margin-bottom: 20px; }
+    .prose ul, .prose ol { margin: 0 0 20px 24px; }
+    .prose a { color: var(--brand-mid); text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      .container, .container--narrow { padding: 0 28px; }
+      .section { padding: 48px 0; }
+      .section__heading { font-size: 42px; }
+      .prose { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+  <slot />
+</body>
+</html>

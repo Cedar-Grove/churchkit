@@ -1,0 +1,229 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { getEvents, getSettings } from '../lib/api';
+import { env } from 'cloudflare:workers';
+
+let events: any[] = [];
+try {
+  events = await getEvents(env.API_BASE);
+} catch {}
+
+const settings = await getSettings(env.API_BASE).catch(() => ({} as any));
+
+function formatEventDate(dateStr: string | null) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return {
+    month: d.toLocaleDateString('en-US', { month: 'short', timeZone: 'America/Chicago' }).toUpperCase(),
+    day: d.toLocaleDateString('en-US', { day: 'numeric', timeZone: 'America/Chicago' }),
+    weekday: d.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/Chicago' }),
+    fullDate: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' }),
+    time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }),
+  };
+}
+---
+
+<Layout title="Events" description="Upcoming events, gatherings and studies.">
+  <Nav />
+
+  <section class="page-header">
+    <div class="container">
+      <p class="page-header__eyebrow">{settings.church_name ?? ''}</p>
+      <h1 class="page-header__title">Upcoming Events</h1>
+      <p class="page-header__body">Gatherings, studies, and special services.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container--narrow">
+      {events.length === 0 ? (
+        <div class="empty-state">
+          <p>
+            No upcoming events at this time.
+            {settings.church_center_url && (
+              <> Check <a href={settings.church_center_url} target="_blank" rel="noopener">our online calendar</a> for the latest schedule.</>
+            )}
+          </p>
+        </div>
+      ) : (
+        <div class="events-list">
+          {events.map((event: any, i: number) => {
+            const d = formatEventDate(event.starts_at);
+            return (
+              <div class="event-row" data-tpl={`event-tpl-${i}`} role="button" tabindex="0">
+                <div class="event-row__date">
+                  {d ? (
+                    <>
+                      <span class="event-row__month">{d.month}</span>
+                      <span class="event-row__day">{d.day}</span>
+                    </>
+                  ) : (
+                    <span class="event-row__open">Open</span>
+                  )}
+                </div>
+                {event.logo_url && (
+                  <img class="event-row__thumb" src={event.logo_url} alt="" loading="lazy" />
+                )}
+                <div class="event-row__info">
+                  <h3 class="event-row__title">{event.name}</h3>
+                  {d ? (
+                    <p class="event-row__when">{d.weekday} · {d.fullDate} at {d.time}</p>
+                  ) : (
+                    <p class="event-row__when">Registration open now</p>
+                  )}
+                </div>
+                {event.source === 'registrations' ? (
+                  <a href={event.registration_url} target="_blank" rel="noopener" class="btn btn--primary event-row__btn">Register →</a>
+                ) : (
+                  <span class="event-row__free">Free</span>
+                )}
+
+                <template id={`event-tpl-${i}`}>
+                  {event.logo_url && <img class="event-modal__img" src={event.logo_url} alt="" />}
+                  <h2 class="event-modal__title">{event.name}</h2>
+                  {d ? (
+                    <p class="event-modal__when">{d.weekday} · {d.fullDate} at {d.time}</p>
+                  ) : (
+                    <p class="event-modal__when">Registration open now</p>
+                  )}
+                  {event.description && (
+                    <div class="event-modal__desc" set:html={event.description} />
+                  )}
+                  {event.source === 'registrations' && (
+                    <a href={event.registration_url} target="_blank" rel="noopener" class="btn btn--primary">Register →</a>
+                  )}
+                </template>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <div class="event-modal" id="event-modal" hidden>
+    <div class="event-modal__backdrop" data-close></div>
+    <div class="event-modal__panel" role="dialog" aria-modal="true">
+      <button class="event-modal__close" data-close aria-label="Close">&times;</button>
+      <div class="event-modal__body" id="event-modal-body"></div>
+    </div>
+  </div>
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header { background: var(--brand); padding: 130px 0 108px; }
+  .page-header__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; color: var(--accent); margin-bottom: 12px; }
+  .page-header__title { font-size: clamp(50px, 7vw, 73px); font-weight: 600; color: white; line-height: 1.1; margin-bottom: 14px; }
+  .page-header__body { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.7); font-weight: 300; }
+
+  .events-list { display: flex; flex-direction: column; gap: 16px; }
+
+  .event-row {
+    display: flex; align-items: center; gap: 20px;
+    background: white; border: 1px solid var(--border); border-radius: 16px; padding: 18px 28px;
+    transition: all 0.2s; cursor: pointer;
+  }
+  .event-row:hover, .event-row:focus-visible { box-shadow: 0 4px 20px rgba(0,0,0,0.07); border-color: var(--brand-light); outline: none; }
+
+  .event-row__date {
+    width: 56px; height: 56px;
+    background: var(--brand-pale); border-radius: 14px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex-shrink: 0; border: 1px solid rgba(45,74,43,0.12);
+  }
+  .event-row__month { font-size: 10px; font-weight: 700; color: var(--brand-mid); letter-spacing: 0.5px; }
+  .event-row__day { font-family: var(--font-heading); font-size: 24px; color: var(--brand); font-weight: 600; line-height: 1; }
+  .event-row__open { font-size: 10px; font-weight: 700; color: var(--brand-mid); text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+
+  .event-row__thumb { width: 56px; height: 56px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+
+  .event-row__info { flex: 1; min-width: 0; }
+  .event-row__title { font-size: 25px; color: var(--brand); font-weight: 600; margin-bottom: 4px; }
+  .event-row__when { font-size: 13px; color: var(--ink-faint); }
+
+  .event-row__btn { white-space: nowrap; flex-shrink: 0; }
+  .event-row__free { font-size: 12px; font-weight: 700; color: var(--brand-mid); background: var(--brand-faint); padding: 6px 14px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-family: var(--font-heading); font-size: 22px; }
+  .empty-state a { color: var(--brand); text-decoration: underline; }
+
+  @media (max-width: 768px) { .event-row { flex-wrap: wrap; gap: 14px; } }
+
+  /* Modal */
+  .event-modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .event-modal[hidden] { display: none; }
+  .event-modal__backdrop { position: absolute; inset: 0; background: rgba(20, 30, 20, 0.55); }
+  .event-modal__panel {
+    position: relative; background: white; border-radius: 18px; max-width: 560px; width: 100%;
+    max-height: 85vh; overflow-y: auto; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .event-modal__close {
+    position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%;
+    border: none; background: var(--brand-faint); color: var(--brand); font-size: 22px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .event-modal__close:hover { background: var(--brand-pale); }
+  .event-modal__img { width: 100%; border-radius: 14px; margin-bottom: 20px; display: block; }
+  .event-modal__title { font-size: 34px; color: var(--brand); font-weight: 600; margin-bottom: 6px; padding-right: 30px; }
+  .event-modal__when { font-size: 13px; color: var(--ink-faint); margin-bottom: 18px; }
+  .event-modal__desc { font-family: var(--font-heading); font-size: 21px; color: var(--ink-soft); font-weight: 300; line-height: 1.7; margin-bottom: 20px; }
+  .event-modal__desc :global(p) { margin: 0 0 10px; }
+  .event-modal__desc :global(p:last-child) { margin-bottom: 0; }
+  .event-modal__desc :global(h1),
+  .event-modal__desc :global(h2),
+  .event-modal__desc :global(h3) { font-family: inherit; font-size: 24px; font-weight: 600; color: var(--brand); margin: 16px 0 6px; }
+  .event-modal__desc :global(h1:first-child),
+  .event-modal__desc :global(h2:first-child),
+  .event-modal__desc :global(h3:first-child) { margin-top: 0; }
+  .event-modal__desc :global(ul),
+  .event-modal__desc :global(ol) { margin: 0 0 10px; padding-left: 20px; }
+  .event-modal__desc :global(li) { margin-bottom: 4px; }
+  .event-modal__desc :global(strong) { font-weight: 600; color: var(--ink); }
+  .event-modal__desc :global(a) { color: var(--brand); text-decoration: underline; }
+</style>
+
+<script>
+  const modal = document.getElementById('event-modal') as HTMLElement;
+  const modalBody = document.getElementById('event-modal-body') as HTMLElement;
+
+  function openModal(tplId: string) {
+    const tpl = document.getElementById(tplId) as HTMLTemplateElement | null;
+    if (!tpl) return;
+    modalBody.replaceChildren(tpl.content.cloneNode(true));
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    modalBody.replaceChildren();
+    document.body.style.overflow = '';
+  }
+
+  document.querySelectorAll('.event-row').forEach((row) => {
+    const tplId = row.getAttribute('data-tpl');
+    if (!tplId) return;
+    row.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) return;
+      openModal(tplId);
+    });
+    row.addEventListener('keydown', (e: Event) => {
+      const ke = e as KeyboardEvent;
+      if (ke.key === 'Enter' || ke.key === ' ') {
+        if ((ke.target as HTMLElement).closest('a')) return;
+        ke.preventDefault();
+        openModal(tplId);
+      }
+    });
+  });
+
+  modal.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', closeModal));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeModal();
+  });
+</script>

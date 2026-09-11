@@ -1,0 +1,94 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { getStaff } from '../lib/api';
+import { env } from 'cloudflare:workers';
+
+let staff: any[] = [];
+try {
+  staff = await getStaff(env.API_BASE);
+} catch {}
+---
+
+<Layout title="Our Staff" description="Meet the team that serves our church.">
+  <Nav />
+
+  <section class="page-header">
+    <div class="container">
+      <p class="page-header__eyebrow">About Us</p>
+      <h1 class="page-header__title">Our Staff</h1>
+      <p class="page-header__body">Meet the team that serves our church.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="staff-grid">
+        {staff.length > 0 ? staff.map((member: any) => (
+          <div class="staff-card">
+            <div class="staff-card__top">
+              {member.photo_url ? (
+                <img src={member.photo_url} alt={member.name} class="staff-card__photo" loading="lazy" />
+              ) : (
+                <div class="staff-card__avatar">
+                  {member.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                </div>
+              )}
+              <div class="staff-card__info">
+                <h3 class="staff-card__name">{member.name}</h3>
+                <p class="staff-card__title">{member.title}</p>
+                {member.email && (
+                  <a href={`mailto:${member.email}`} class="staff-card__email">{member.email}</a>
+                )}
+              </div>
+            </div>
+            {member.bio && (
+              <p class="staff-card__bio">{member.bio}</p>
+            )}
+          </div>
+        )) : (
+          <div class="staff-card">
+            <div class="staff-card__top">
+              <div class="staff-card__avatar">BA</div>
+              <div class="staff-card__info">
+                <h3 class="staff-card__name">Pastor Billy Abrams</h3>
+                <p class="staff-card__title">Senior Pastor</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header { background: var(--brand); padding: 130px 0 108px; }
+  .page-header__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; color: var(--accent); margin-bottom: 12px; }
+  .page-header__title { font-size: clamp(50px, 7vw, 73px); font-weight: 600; color: white; line-height: 1.1; margin-bottom: 12px; }
+  .page-header__body { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.7); font-weight: 300; }
+
+  .staff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+
+  .staff-card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 32px; transition: all 0.2s; }
+  .staff-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: var(--brand-light); }
+
+  .staff-card__top { display: flex; align-items: flex-start; gap: 22px; }
+
+  .staff-card__photo { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 4px solid var(--brand-pale); }
+  .staff-card__avatar { width: 130px; height: 130px; border-radius: 50%; background: var(--brand-pale); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: var(--font-heading); font-size: 38px; font-weight: 700; color: var(--brand); border: 4px solid rgba(45,74,43,0.1); }
+
+  .staff-card__info { flex: 1; min-width: 0; padding-top: 8px; }
+  .staff-card__name { font-size: 28px; color: var(--brand); font-weight: 600; margin-bottom: 4px; }
+  .staff-card__title { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 8px; }
+  .staff-card__email { font-size: 13px; color: var(--brand-mid); text-decoration: none; transition: color 0.15s; word-break: break-all; }
+  .staff-card__email:hover { color: var(--brand); text-decoration: underline; }
+
+  .staff-card__bio { font-family: var(--font-heading); font-size: 21px; color: var(--ink-soft); line-height: 1.75; font-weight: 300; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+
+  @media (max-width: 1000px) { .staff-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .staff-grid { grid-template-columns: 1fr; } }
+</style>

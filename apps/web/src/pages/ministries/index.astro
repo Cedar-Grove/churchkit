@@ -1,0 +1,67 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import Footer from '../../components/Footer.astro';
+import { getMinistries, getSettings } from '../../lib/api';
+import { env } from 'cloudflare:workers';
+
+const [ministries, settings] = await Promise.all([
+  getMinistries(env.API_BASE),
+  getSettings(env.API_BASE).catch(() => ({} as any)),
+]);
+---
+
+<Layout title="Ministries" description="Ministries for every stage of life.">
+  <Nav />
+
+  <section class="page-header">
+    <div class="container">
+      <p class="page-header__eyebrow">{settings.church_name ?? ''}</p>
+      <h1 class="page-header__title">Ministries</h1>
+      <p class="page-header__body">We believe everyone belongs to community. There's a place for you here.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="ministries-grid">
+        {ministries.map((m: any) => (
+          <a href={`/ministries/${m.slug}`} class="ministry-card">
+            {m.image_url && (
+              <img
+                src={m.image_url}
+                alt=""
+                class="ministry-card__image"
+                loading="lazy"
+                style={`object-position: ${m.image_focal_x ?? 50}% ${m.image_focal_y ?? 50}%;`}
+              />
+            )}
+            <h3 class="ministry-card__title">{m.title}</h3>
+            <p class="ministry-card__body">{m.subtext}</p>
+            <span class="ministry-card__link">Learn More →</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header { background: var(--brand); padding: 130px 0 108px; }
+  .page-header__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; color: var(--accent); margin-bottom: 12px; }
+  .page-header__title { font-size: clamp(50px, 7vw, 73px); font-weight: 600; color: white; line-height: 1.1; margin-bottom: 14px; }
+  .page-header__body { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.7); font-weight: 300; }
+
+  .ministries-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .ministry-card { display: flex; flex-direction: column; background: white; border: 1px solid var(--border); border-radius: 16px; padding: 36px 28px; text-decoration: none; transition: all 0.2s; overflow: hidden; }
+  .ministry-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: var(--brand-light); }
+  .ministry-card__image { width: calc(100% + 56px); height: 160px; object-fit: cover; margin: -36px -28px 20px; }
+  .ministry-card__title { font-size: 34px; color: var(--brand); font-weight: 600; margin-bottom: 12px; }
+  .ministry-card__body { font-family: var(--font-heading); font-size: 21px; color: var(--ink-soft); line-height: 1.7; font-weight: 300; flex: 1; margin-bottom: 20px; }
+  .ministry-card__link { font-size: 13px; font-weight: 700; color: var(--brand); }
+
+  @media (max-width: 900px) { .ministries-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .ministries-grid { grid-template-columns: 1fr; } }
+</style>

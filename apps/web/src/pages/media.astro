@@ -1,0 +1,167 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { getSermons } from '../lib/api';
+import { env } from 'cloudflare:workers';
+
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+
+let sermons: any[] = [];
+try {
+  sermons = await getSermons(env.API_BASE);
+} catch {}
+
+const withYouTube = sermons.filter((s: any) => s.youtube_url);
+const allSeries = [...new Set(withYouTube.map((s: any) => s.series_title).filter(Boolean))] as string[];
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' });
+}
+
+function getYouTubeId(url: string) {
+  const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+---
+
+<Layout title="Sermons & Media" description="Browse sermons and messages.">
+  <Nav />
+
+  <section class="page-header">
+    <div class="container">
+      <p class="page-header__eyebrow">Messages</p>
+      <h1 class="page-header__title">Sermons & Media</h1>
+      <p class="page-header__body">Every Sunday message is available to watch online.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      {allSeries.length > 0 && (
+        <div class="filter-bar">
+          <span class="filter-bar__label">Filter by Series:</span>
+          <div class="filter-bar__pills">
+            <button class="filter-pill filter-pill--active" data-series="all">All</button>
+            {allSeries.map((s) => (
+              <button class="filter-pill" data-series={s}>{s}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {withYouTube.length === 0 ? (
+        <div class="empty-state">
+          <p>No sermons available at this time.</p>
+        </div>
+      ) : (
+        <div class="sermons-grid" id="sermons-grid">
+          {withYouTube.map((sermon: any) => {
+            const ytId = getYouTubeId(sermon.youtube_url);
+            const thumb = sermon.thumbnail || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null);
+            return (
+              <div class="sermon-card" data-series={sermon.series_title || ''}>
+                <a href={sermon.youtube_url} target="_blank" rel="noopener" class="sermon-card__thumb">
+                  {thumb ? (
+                    <img src={thumb} alt={sermon.title || 'Sermon'} loading="lazy" />
+                  ) : (
+                    <div class="sermon-card__thumb-placeholder"><svg width="40" height="40" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg></div>
+                  )}
+                  <div class="sermon-card__play"></div>
+                </a>
+                <div class="sermon-card__body">
+                  {sermon.series_title && (
+                    <p class="sermon-card__series">{sermon.series_title}</p>
+                  )}
+                  <h3 class="sermon-card__title">{sermon.title || 'Sunday Service'}</h3>
+                  <p class="sermon-card__date">{formatDate(sermon.date)}</p>
+                  <a href={sermon.youtube_url} target="_blank" rel="noopener" class="btn btn--primary sermon-card__btn">
+                    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> Watch
+                  </a>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header {
+    background: var(--brand);
+    padding: 130px 0 108px;
+  }
+  .page-header__eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2.5px; color: var(--accent); margin-bottom: 12px; }
+  .page-header__title { font-size: clamp(50px, 7vw, 73px); font-weight: 600; color: white; line-height: 1.1; margin-bottom: 14px; }
+  .page-header__body { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.7); font-weight: 300; }
+
+  .filter-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .filter-bar__label { font-size: 13px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
+  .filter-bar__pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-pill { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); background: white; font-size: 13px; font-weight: 500; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; font-family: var(--font-body); }
+  .filter-pill:hover { border-color: var(--brand-light); color: var(--brand); }
+  .filter-pill--active { background: var(--brand); color: white; border-color: var(--brand); }
+
+  .sermons-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+
+  .sermon-card { background: white; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: all 0.2s; }
+  .sermon-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.1); transform: translateY(-2px); }
+
+  .sermon-card__thumb { display: block; position: relative; aspect-ratio: 16/9; background: var(--brand); overflow: hidden; }
+  .sermon-card__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+  .sermon-card__thumb:hover img { transform: scale(1.04); }
+  .sermon-card__thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: rgba(255,255,255,0.3); }
+
+  .sermon-card__play {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.2);
+    transition: background 0.2s;
+  }
+  .sermon-card__thumb:hover .sermon-card__play { background: rgba(0,0,0,0.35); }
+  .sermon-card__play::after {
+    content: '';
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.92);
+    border-radius: 50%;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17' viewBox='0 0 14 14'%3E%3Cpath d='M3.6 2.3L11.4 7L3.6 11.7V2.3Z' fill='%23273920'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+
+  .sermon-card__body { padding: 20px; }
+  .sermon-card__series { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--brand); margin-bottom: 6px; }
+  .sermon-card__title { font-size: 25px; color: var(--brand); font-weight: 600; margin-bottom: 6px; line-height: 1.3; }
+  .sermon-card__date { font-size: 12px; color: var(--ink-faint); margin-bottom: 16px; }
+  .sermon-card__btn { font-size: 13px; padding: 8px 18px; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-soft); font-family: var(--font-heading); font-size: 22px; }
+  .empty-state a { color: var(--brand); text-decoration: underline; }
+
+  @media (max-width: 900px) { .sermons-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) {
+    .sermons-grid { grid-template-columns: 1fr; }
+    .filter-bar { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<script>
+  const pills = document.querySelectorAll<HTMLElement>('.filter-pill');
+  const cards = document.querySelectorAll<HTMLElement>('.sermon-card');
+
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('filter-pill--active'));
+      pill.classList.add('filter-pill--active');
+      const series = pill.dataset.series;
+      cards.forEach(card => {
+        card.style.display = (series === 'all' || card.dataset.series === series) ? '' : 'none';
+      });
+    });
+  });
+</script>

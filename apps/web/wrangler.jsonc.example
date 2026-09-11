@@ -1,0 +1,24 @@
+/**
+ * ChurchKit website — Wrangler configuration template.
+ * Copy to wrangler.jsonc and replace every <PLACEHOLDER>.
+ */
+{
+	"compatibility_date": "2026-05-01",
+	"compatibility_flags": ["global_fetch_strictly_public"],
+	"name": "<SLUG>-web",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"assets": { "directory": "./dist", "binding": "ASSETS" },
+	"observability": { "enabled": true },
+	"vars": {
+		// Required. No default exists — a guessed API base would point this
+		// church's website at another church's data.
+		"API_BASE": "https://api.<YOUR_DOMAIN>",
+		// Optional. Public Turnstile sitekey; it ships in the page HTML by
+		// design. Its paired secret is a Worker secret on the API.
+		"TURNSTILE_SITE_KEY": ""
+	},
+	"routes": [
+		{ "pattern": "<YOUR_DOMAIN>", "custom_domain": true },
+		{ "pattern": "www.<YOUR_DOMAIN>", "custom_domain": true }
+	]
+}

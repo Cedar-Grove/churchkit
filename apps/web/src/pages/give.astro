@@ -1,0 +1,75 @@
+---
+/**
+ * Giving.
+ *
+ * The page is a shell: an online-giving button pointing wherever this
+ * church gives, plus whatever that church wrote on its own `give` page.
+ * The prose that used to live here named a specific congregation, its
+ * mailing address and its denomination — none of which ChurchKit can know,
+ * and all of which would be published in the next church's voice.
+ */
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { getSettings, getPage } from '../lib/api';
+import { env } from 'cloudflare:workers';
+
+const settings = await getSettings(env.API_BASE).catch(() => ({} as any));
+
+let page: any = null;
+try {
+  page = await getPage('give', env.API_BASE);
+} catch {}
+
+const givingUrl: string = settings.giving_url ?? '';
+---
+
+<Layout title="Give" description={page?.subtext ?? 'Support our ministry through your generous giving.'}>
+  <Nav />
+
+  <section class="page-header">
+    <div class="container">
+      <p class="page-header__eyebrow">Generosity</p>
+      <h1 class="page-header__title">{page?.title ?? 'Give'}</h1>
+      {page?.subtext && <p class="page-header__body">{page.subtext}</p>}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container--narrow">
+      {givingUrl ? (
+        <p class="give-cta">
+          <a href={givingUrl} target="_blank" rel="noopener" class="btn btn--primary">Give Online →</a>
+        </p>
+      ) : (
+        /*
+          No giving link configured. Say nothing rather than inventing
+          instructions — a wrong address for a cheque is worse than none.
+        */
+        <p class="section__body">Online giving is not set up yet.</p>
+      )}
+
+      {page?.content_html && <div class="prose" set:html={page.content_html} />}
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<style>
+  .page-header { padding: 64px 0 32px; background: var(--brand-faint); }
+  .page-header__eyebrow {
+    font-family: var(--font-display); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 3px; color: var(--brand-mid);
+    margin-bottom: 12px;
+  }
+  .page-header__title { font-family: var(--font-heading); font-size: 56px; color: var(--brand); }
+  .page-header__body {
+    font-family: var(--font-heading); font-size: 23px; color: var(--ink-soft);
+    margin-top: 12px; max-width: 640px;
+  }
+  .give-cta { margin-bottom: 32px; }
+  @media (max-width: 768px) {
+    .page-header__title { font-size: 40px; }
+  }
+</style>
