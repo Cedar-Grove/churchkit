@@ -15,9 +15,18 @@ PCO_SERVICE_TYPE_ID=
 PCO_CONNECT_CARD_NOTE_CATEGORY_ID=
 PCO_PRAYER_REQUEST_NOTE_CATEGORY_ID=
 PCO_IM_NEW_NOTE_CATEGORY_ID=
+# PCO Forms with an "add to workflow" automation attached. Optional: with
+# no ID set, that form files no workflow card and everything else still
+# works. (PCO refuses direct WorkflowCard creation over API credentials,
+# so submitting to a form is the only way to file one.)
+PCO_CONNECT_CARD_FORM_ID=
+PCO_PRAYER_REQUEST_FORM_ID=
+PCO_IM_NEW_FORM_ID=
 
 # ── Email (Resend) ──────────────────────────────────────────────
 RESEND_API_KEY=
+# A form with no address set is still recorded and still filed to Planning
+# Center; only the staff notification is skipped.
 EMAIL_STAFF_CONNECT_CARD=
 EMAIL_STAFF_IM_NEW=
 EMAIL_STAFF_CONTACT=

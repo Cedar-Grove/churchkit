@@ -71,6 +71,9 @@ CREATE TABLE IF NOT EXISTS form_submissions (
   form_type TEXT,
   data TEXT,
   pco_person_id TEXT,
+  -- Why a Planning Center sync failed, if it did. The submission is stored
+  -- either way so nothing a visitor sent is ever lost to an upstream error.
+  pco_error TEXT,
   submitted_at INTEGER DEFAULT (unixepoch()),
   emailed INTEGER DEFAULT 0
 );

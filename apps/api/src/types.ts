@@ -36,6 +36,13 @@ export interface Env {
 	PCO_CONNECT_CARD_NOTE_CATEGORY_ID?: string;
 	PCO_PRAYER_REQUEST_NOTE_CATEGORY_ID?: string;
 	PCO_IM_NEW_NOTE_CATEGORY_ID?: string;
+	// PCO Forms whose "on submission, add to workflow" automation files a
+	// workflow card. Creating a WorkflowCard directly is refused by PCO for
+	// API-credential auth, so submitting to a form is how a card gets made.
+	// A form with no ID set simply files no card.
+	PCO_CONNECT_CARD_FORM_ID?: string;
+	PCO_PRAYER_REQUEST_FORM_ID?: string;
+	PCO_IM_NEW_FORM_ID?: string;
 
 	// ── Optional: sermon video (YouTube Data API v3) ────────────────
 	YOUTUBE_API_KEY?: string;

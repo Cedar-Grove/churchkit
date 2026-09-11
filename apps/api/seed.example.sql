@@ -16,6 +16,10 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
   -- you do not use Church Center; calendar events then carry no link.
   ('church_center_url', ''),
   ('giving_url', ''),
+  -- The visitor welcome email. Edit in the admin panel; {{placeholders}}
+  -- are filled from the settings above. Leave empty to use the built-in
+  -- default, which names no denomination and no individual.
+  ('welcome_email_html', ''),
   ('service_times', '{"sunday":["9:00 AM — Bible Study","10:30 AM — Worship Service"],"wednesday":["6:30 PM — Midweek Gathering"]}');
 
 -- Ministries are pages with is_ministry = 1. Add, remove and reorder them
