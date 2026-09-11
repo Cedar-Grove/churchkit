@@ -3,12 +3,14 @@ import { provision } from './commands/provision.mjs';
 import { doctor } from './commands/doctor.mjs';
 import { secrets } from './commands/secrets.mjs';
 import { deploy } from './commands/deploy.mjs';
+import { dev } from './commands/dev.mjs';
 
 const COMMANDS = {
 	provision: { run: provision, help: 'Create this church\'s Cloudflare resources and config' },
 	secrets: { run: secrets, help: 'Push credentials to the API worker from a local file' },
 	deploy: { run: deploy, help: 'Build and deploy api, web and admin' },
 	doctor: { run: doctor, help: 'Report what is configured and what each gap costs' },
+	dev: { run: dev, help: 'Run api, web and admin locally in Docker containers' },
 };
 
 function usage() {
@@ -28,6 +30,10 @@ Options
   --force             provision: overwrite existing wrangler.jsonc files
   --file=<path>       secrets: where to read credentials from
   --only=api,web      deploy: deploy only these apps
+  --attach            dev: stay in the foreground streaming logs
+  --down / --logs     dev: stop the stack / follow its output
+  --yes               dev: install Docker without asking first
+  --api-port=8787     dev: change a published port (also --web-port, --admin-port)
 
 A church slug names a directory under brands/ holding a brand.json.
 Start with: churchkit provision example-church --dry-run

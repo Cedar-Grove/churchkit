@@ -48,6 +48,7 @@ export async function verifyAccessJWT(request: Request, env: Env): Promise<Verif
 	// Fail closed. With no audience configured there is nothing to verify a
 	// token against, so every admin request is refused rather than relying
 	// on an undefined comparison happening not to match.
+	//
 	const expectedAud = env.CF_ACCESS_AUD?.trim();
 	if (!expectedAud) return { ok: false, reason: 'access_not_configured' };
 

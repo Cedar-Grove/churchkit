@@ -1,0 +1,90 @@
+# Local ChurchKit stack, for trying the thing out on a laptop.
+#
+# Started by `churchkit dev <slug>`, which writes docker/.env first. Nothing
+# here talks to Cloudflare: the API runs in workerd locally via wrangler,
+# with a local D1 database in .wrangler/state. Deleting that directory
+# resets everything.
+#
+# This is not a deployment target. It has no TLS, no Cloudflare Access, and
+# a local-only admin bypass — see the api service below.
+
+name: churchkit
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    working_dir: /repo/apps/api
+    entrypoint: ["/entrypoint.sh"]
+    command:
+      - npx
+      - wrangler
+      - dev
+      - --local
+      - --ip=0.0.0.0
+      - --port=8787
+      # Persist the local D1 database across restarts.
+      - --persist-to=/repo/.wrangler/state
+    ports:
+      - "${API_PORT:-8787}:8787"
+    volumes:
+      - ..:/repo
+      - node_modules:/repo/node_modules
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8787/api/capabilities"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 90s
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    working_dir: /repo/apps/web
+    entrypoint: ["/entrypoint.sh"]
+    command: ["npx", "astro", "dev", "--host", "0.0.0.0", "--port", "4321"]
+    ports:
+      - "${WEB_PORT:-4321}:4321"
+    volumes:
+      - ..:/repo
+      - node_modules:/repo/node_modules
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      # The website renders on the server, so it reaches the API over the
+      # compose network by service name.
+      API_BASE: "http://api:8787"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  admin:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+    working_dir: /repo/apps/admin
+    entrypoint: ["/entrypoint.sh"]
+    command: ["npx", "astro", "dev", "--host", "0.0.0.0", "--port", "4322"]
+    ports:
+      - "${ADMIN_PORT:-4322}:4322"
+    volumes:
+      - ..:/repo
+      - node_modules:/repo/node_modules
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    environment:
+      # The admin panel runs entirely in the browser, so its API base must be
+      # one the *browser* can reach — the host's published port, not the
+      # compose service name. This is the one place the two differ, and
+      # getting it wrong produces a panel that loads and then fails every
+      # request with a connection error.
+      PUBLIC_API_BASE: "http://localhost:${API_PORT:-8787}"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  node_modules:

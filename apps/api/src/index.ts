@@ -73,6 +73,7 @@ import {
 import { verifyAccessJWT, handleAdmin } from './routes/admin';
 import { handleBibleAudio, handleBibleText } from './routes/bible';
 import { purgeExpiredRateLimits } from './lib/rateLimit';
+import { isLocalDevRequest } from './lib/localAdmin';
 
 async function route(path: string, method: string, request: Request, env: Env, origin: string): Promise<Response> {
 	const caps = capabilities(env);
@@ -158,12 +159,18 @@ async function route(path: string, method: string, request: Request, env: Env, o
 
 	// ── ADMIN ROUTES ────────────────────────────────────────────
 	if (path.startsWith('/api/admin/')) {
+		const cors = adminCorsHeaders(origin, env);
+
+		// The local stack has no Cloudflare Access in front of it. This is
+		// only ever true for a request whose own hostname is loopback, which
+		// a deployed Worker's never is. See lib/localAdmin.ts.
+		const local = isLocalDevRequest(request, env);
+
 		// With no Access audience configured there is no way to verify an
 		// admin, so the panel is unavailable rather than unprotected.
-		if (!caps.admin) return notConfigured('admin');
+		if (!local && !caps.admin) return notConfigured('admin');
 
-		const cors = adminCorsHeaders(origin, env);
-		const auth = await verifyAccessJWT(request, env);
+		const auth = local ? { ok: true as const } : await verifyAccessJWT(request, env);
 		if (!auth.ok) {
 			return new Response(JSON.stringify({ error: `Unauthorized: ${auth.reason}` }), {
 				status: 401,

@@ -81,6 +81,15 @@ export async function doctor({ slug, args }) {
 		else notes.push(secret.name);
 	}
 
+	// A bypass left set outside local development is worth shouting about,
+	// even though it cannot actually authorise anything on a real hostname.
+	if (process.env.ADMIN_DEV_BYPASS) {
+		console.log('\n  ✗ ADMIN_DEV_BYPASS is set in this environment.');
+		console.log('    It only ever applies to loopback requests, so a deployed Worker ignores');
+		console.log('    it — but it should not be anywhere near a deployment. Remove it.');
+		problems.push('ADMIN_DEV_BYPASS is set');
+	}
+
 	// ── Verdict ──────────────────────────────────────────────────
 	const names = resourceNames(slug);
 	console.log(`\nCloudflare resources this deployment expects`);

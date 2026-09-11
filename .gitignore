@@ -41,3 +41,8 @@ apps/admin/.env
 apps/mobile/.expo/
 apps/mobile/android/
 apps/mobile/ios/
+
+# Local Docker stack — generated per machine, carries test credentials
+docker/.env
+apps/api/wrangler.local.jsonc
+.wrangler/

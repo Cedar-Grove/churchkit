@@ -77,6 +77,14 @@ export interface Env {
 	 */
 	ADMIN_ALLOWED_ORIGINS?: string;
 
+	/**
+	 * Local development only. Skips Cloudflare Access verification for
+	 * requests whose own hostname is loopback — which a deployed Worker's
+	 * never is, so this cannot weaken a real deployment. Set it in
+	 * .dev.vars, never with `wrangler secret put`. See lib/localAdmin.ts.
+	 */
+	ADMIN_DEV_BYPASS?: string;
+
 	// ── Optional: bot protection (Cloudflare Turnstile) ─────────────
 	/** Unset means no challenge; the other form guards still apply. */
 	TURNSTILE_SECRET?: string;

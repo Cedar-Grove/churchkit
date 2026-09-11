@@ -27,6 +27,10 @@ export const CORS_HEADERS = {
  * deployment serving its admin panel from the API's own domain needs no
  * configuration here.
  */
+function isLoopback(hostname: string): boolean {
+	return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1';
+}
+
 export function isAllowedAdminOrigin(origin: string, env?: Pick<Env, 'ADMIN_ALLOWED_ORIGINS'>): boolean {
 	if (!origin) return false;
 	const allowed = env?.ADMIN_ALLOWED_ORIGINS;
@@ -35,10 +39,16 @@ export function isAllowedAdminOrigin(origin: string, env?: Pick<Env, 'ADMIN_ALLO
 	let host: string;
 	try {
 		const url = new URL(origin);
+		host = url.hostname.toLowerCase();
 		// Never allow an http:// origin to hold credentials, however it is
 		// listed — a suffix rule must not silently permit one.
-		if (url.protocol !== 'https:') return false;
-		host = url.hostname.toLowerCase();
+		//
+		// Loopback is the one exception, and only when listed explicitly.
+		// Browsers already treat localhost as a secure context, and the
+		// local Docker stack has no TLS; without this the admin panel could
+		// not be tried out at all before a church owns a domain. It is still
+		// opt-in: an origin nobody listed is refused either way.
+		if (url.protocol !== 'https:' && !isLoopback(host)) return false;
 	} catch {
 		return false;
 	}

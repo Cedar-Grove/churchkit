@@ -91,10 +91,28 @@ describe('isAllowedAdminOrigin', () => {
 		expect(isAllowedAdminOrigin('https://example.org.evil.com', env)).toBe(false);
 	});
 
-	it('never allows an http origin to hold credentials', () => {
+	it('never allows a non-loopback http origin to hold credentials', () => {
 		expect(isAllowedAdminOrigin('http://admin.example.org', { ADMIN_ALLOWED_ORIGINS: '.example.org' })).toBe(false);
 		expect(
 			isAllowedAdminOrigin('http://admin.example.org', { ADMIN_ALLOWED_ORIGINS: 'http://admin.example.org' })
+		).toBe(false);
+	});
+
+	it('allows http on loopback, but only when listed explicitly', () => {
+		expect(
+			isAllowedAdminOrigin('http://localhost:4322', { ADMIN_ALLOWED_ORIGINS: 'http://localhost:4322' })
+		).toBe(true);
+		expect(
+			isAllowedAdminOrigin('http://127.0.0.1:4322', { ADMIN_ALLOWED_ORIGINS: 'http://127.0.0.1:4322' })
+		).toBe(true);
+		// Not listed: still refused, exactly like any other origin.
+		expect(isAllowedAdminOrigin('http://localhost:4322', { ADMIN_ALLOWED_ORIGINS: '.example.org' })).toBe(false);
+		expect(isAllowedAdminOrigin('http://localhost:4322', {})).toBe(false);
+	});
+
+	it('does not treat a hostname merely containing "localhost" as loopback', () => {
+		expect(
+			isAllowedAdminOrigin('http://localhost.evil.com', { ADMIN_ALLOWED_ORIGINS: 'http://localhost.evil.com' })
 		).toBe(false);
 	});
 

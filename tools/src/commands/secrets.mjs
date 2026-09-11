@@ -36,6 +36,15 @@ export async function secrets({ slug, flags }) {
 	const parsed = parseEnvFile(readFileSync(file, 'utf8'));
 	const known = new Set(SECRETS.map((s) => s.name));
 
+	// Refused by name, not merely absent from the known list, so the reason
+	// is explained rather than looking like a typo.
+	if ('ADMIN_DEV_BYPASS' in parsed) {
+		console.error('\n✗ ADMIN_DEV_BYPASS is for local development and must never be deployed.');
+		console.error('  It belongs in docker/.env, which `churchkit dev` writes. Remove it from');
+		console.error(`  ${file} and try again.`);
+		return 1;
+	}
+
 	const unknown = Object.keys(parsed).filter((k) => !known.has(k));
 	if (unknown.length) {
 		console.log(`\n! Ignoring ${unknown.length} unrecognised key(s): ${unknown.join(', ')}`);
