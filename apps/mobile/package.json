@@ -6,6 +6,7 @@
   "description": "ChurchKit mobile app \u2014 React Native / Expo.",
   "main": "index.js",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
