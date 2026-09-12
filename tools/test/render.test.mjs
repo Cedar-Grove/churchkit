@@ -196,3 +196,19 @@ test('the local wrangler config points at the real entry point and a local datab
 	// Admin CORS has to allow the browser origin the panel is served from.
 	assert.ok(config.vars.ADMIN_ALLOWED_ORIGINS.includes('http://localhost:4322'));
 });
+
+import { wranglerTarget } from '../src/commands/seed.mjs';
+
+test('a local d1 command names the local config, and a remote one does not', () => {
+	const local = wranglerTarget(true);
+	assert.ok(local.includes('--local'));
+	assert.ok(
+		local.some((a) => a === '--config=wrangler.local.jsonc'),
+		'without --config wrangler looks for a wrangler.jsonc that is not there, and only reports a missing database'
+	);
+	assert.ok(local.some((a) => a.startsWith('--persist-to=')));
+
+	const remote = wranglerTarget(false);
+	assert.deepEqual(remote, ['--remote']);
+	assert.ok(!remote.some((a) => a.includes('local')), 'a remote command must never target local state');
+});
