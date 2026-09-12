@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { readBrand, appDir, resourceNames, REPO_ROOT } from '../lib/paths.mjs';
 import { validate } from '../../../packages/brand/src/validate.mjs';
 import { run } from '../lib/run.mjs';
@@ -112,6 +112,24 @@ export async function provision({ slug, flags }) {
 	const adminConfig = renderTemplate(resolve(appDir('admin'), 'wrangler.jsonc.example'), { SLUG: slug });
 	const adminResult = writeConfig(resolve(appDir('admin'), 'wrangler.jsonc'), adminConfig, { force, dryRun });
 	if (adminResult.reason === 'exists') console.log('   apps/admin/wrangler.jsonc exists — left alone (--force to overwrite)');
+
+	// The admin panel is `output: "static"` with a `client:only="react"`
+	// island — there is no server at request time to read an API_BASE
+	// binding from, so this has to be a build-time env var instead. Without
+	// it, apps/admin/src/components/AdminApp.jsx's `API` constant silently
+	// falls back to "", every fetch goes to a path on the admin's own
+	// origin, and the admin panel loads with no data and no visible error.
+	const adminEnvPath = resolve(appDir('admin'), '.env');
+	if (!existsSync(adminEnvPath) || force) {
+		if (dryRun) {
+			console.log(`  would write ${adminEnvPath}`);
+		} else {
+			writeFileSync(adminEnvPath, `PUBLIC_API_BASE=${brand.urls.api}\n`);
+			console.log(`   wrote ${adminEnvPath}`);
+		}
+	} else {
+		console.log('   apps/admin/.env exists — left alone (--force to overwrite)');
+	}
 
 	// ── 5. Schema and seed ───────────────────────────────────────
 	// Delegated to `seed`, which applies the schema and then this church's
