@@ -51,3 +51,4 @@ apps/api/wrangler.local.jsonc
 # Logos and images written by `churchkit brand` from a church's own brand
 # directory. Generated, and a church's own — never committed here.
 apps/web/public/images/
+apps/mobile/assets/

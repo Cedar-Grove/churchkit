@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { mkdirSync, copyFileSync, existsSync, writeFileSync, rmSync } from 'node:fs';
 import { wordmarkSvg } from '../../../packages/brand/src/logo.mjs';
 import { readBrand, REPO_ROOT, appDir } from '../lib/paths.mjs';
@@ -8,9 +8,9 @@ import { run } from '../lib/run.mjs';
 /**
  * Regenerate a church's design tokens.
  *
- * Writes the website's tokens.css and, with --mobile, the app's theme
- * module. `churchkit deploy` runs this first, so a colour changed in
- * brand.json is always reflected in what ships.
+ * Writes the website's tokens.css and installs its images. `churchkit
+ * deploy` runs this first, so a colour or logo changed in brand.json is
+ * always reflected in what ships.
  */
 export async function brand({ slug, flags }) {
 	const dryRun = flags.has('dry-run');
@@ -31,7 +31,10 @@ export async function brand({ slug, flags }) {
 	], { dryRun });
 
 	if (!result.ok && !result.dryRun) return 1;
-	if (!dryRun) installImages(data, dir);
+	if (!dryRun) {
+		installImages(data, dir);
+		installMobileIcon(data, dir);
+	}
 	return 0;
 }
 
@@ -77,4 +80,29 @@ function installImages(brand, dir) {
 		writeFileSync(resolve(images, `${name}.svg`), wordmarkSvg(brand, { variant }));
 		console.log(`  ${name}.svg (placeholder — add your own to brands/${brand.slug}/assets)`);
 	}
+}
+
+/**
+ * Put this church's app icon where the mobile app's home screen loads it
+ * from.
+ *
+ * `app.config.ts` reads brand.json's appIcon directly by path, since Expo
+ * config runs at build-config time and can bake any file location into the
+ * native icon. `HomeScreen.tsx`'s in-app logo is different: Metro bundles a
+ * literal `require()` path at JS-bundle time, so it needs a real file at a
+ * fixed location rather than one that varies per church. Nothing wrote that
+ * file before this — the very first local mobile build attempted against a
+ * real church's brand.json failed at this exact line.
+ */
+function installMobileIcon(brand, dir) {
+	const configured = brand.assets?.appIcon ?? 'assets/icon.png';
+	const source = resolve(dir, configured);
+	if (!existsSync(source)) {
+		console.log(`  (skipping mobile icon — no ${configured} in brands/${brand.slug})`);
+		return;
+	}
+	const dest = resolve(appDir('mobile'), 'assets/icon.png');
+	mkdirSync(dirname(dest), { recursive: true });
+	copyFileSync(source, dest);
+	console.log(`  apps/mobile/assets/icon.png (from brand.json)`);
 }
