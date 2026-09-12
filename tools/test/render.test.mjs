@@ -174,6 +174,18 @@ test('the deployment template names an entry point that exists', async () => {
 	assert.ok(existsSync(resolve(api, template.main)), `${template.main} does not exist`);
 });
 
+test('the admin deployment template names an entry point that exists', async () => {
+	// Same drift risk as the API's: apps/admin/src/worker.mjs proxies /api/*
+	// same-origin, and a config pointing at a missing entry fails deploy
+	// much less clearly than this test does.
+	const { readFileSync, existsSync } = await import('node:fs');
+	const { resolve } = await import('node:path');
+	const { REPO_ROOT } = await import('../src/lib/paths.mjs');
+	const admin = resolve(REPO_ROOT, 'apps/admin');
+	const template = parseJsonc(readFileSync(resolve(admin, 'wrangler.jsonc.example'), 'utf8'));
+	assert.ok(existsSync(resolve(admin, template.main)), `${template.main} does not exist`);
+});
+
 import { localWranglerConfig } from '../src/commands/dev.mjs';
 
 test('the local wrangler config points at the real entry point and a local database', async () => {

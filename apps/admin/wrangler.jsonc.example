@@ -8,6 +8,14 @@
  * this shape now fails outright ("Missing entry-point to Worker script or
  * to assets directory") rather than falling back to the old product.
  *
+ * `main` fronts the static assets with src/worker.mjs, which proxies
+ * /api/* to the API worker over the service binding below. The admin SPA
+ * calls the API same-origin (relative /api/... paths) rather than across
+ * origins: Cloudflare only injects the CF-Access-Jwt-Assertion header on
+ * requests to the Access-protected hostname itself, and the JWT cookie it
+ * comes from is HttpOnly, so client JS can never read it to forward as a
+ * header to a *different* origin. Same-origin sidesteps both problems.
+ *
  * Access control is NOT configured here: put a Cloudflare Access
  * application in front of this hostname, and set its audience tag as
  * CF_ACCESS_AUD on the API worker. Without both, the admin API refuses
@@ -15,6 +23,10 @@
  */
 {
 	"name": "<SLUG>-admin",
+	"main": "src/worker.mjs",
 	"compatibility_date": "2026-05-01",
-	"assets": { "directory": "./dist" }
+	"assets": { "directory": "./dist", "binding": "ASSETS" },
+	"services": [
+		{ "binding": "API", "service": "<SLUG>-api" }
+	]
 }

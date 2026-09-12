@@ -28,19 +28,18 @@ const DEEP_LINK_LABELS = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getCFAccessToken() {
-  const match = document.cookie.match(/(?:^|;\s*)CF_Authorization=([^;]+)/);
-  return match ? match[1] : null;
-}
-
+// The Access JWT lives in an HttpOnly cookie — unreadable from JS by design
+// — and Cloudflare only injects CF-Access-Jwt-Assertion on requests it
+// proxies to the protected hostname itself. Calling the API same-origin
+// (apps/admin/src/worker.mjs proxies /api/* over a service binding) means
+// that header rides along automatically; nothing here needs to read or
+// forward it.
 function api(path, opts = {}) {
-  const token = getCFAccessToken();
   return fetch(`${API}${path}`, {
     ...opts,
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { "CF-Access-Jwt-Assertion": token } : {}),
       ...(opts.headers || {}),
     },
   });
@@ -439,14 +438,12 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
     if (!file) return;
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     setUploadingImage(true);
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error();
       const { url } = await res.json();
@@ -681,14 +678,12 @@ function HomepagePage({ toast }) {
     setImgPreview(preview);
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     setUploading(true);
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
@@ -861,13 +856,11 @@ function StaffPage({ toast }) {
     setImgPreview(URL.createObjectURL(file));
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error();
       const { url } = await res.json();
@@ -981,13 +974,11 @@ function PagesPage({ toast, siteUrl }) {
     setUploadingGallery(u => ({ ...u, [slotNum]: true }));
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error();
       const { url } = await res.json();
@@ -1007,13 +998,11 @@ function PagesPage({ toast, siteUrl }) {
     setUploadingImg(true);
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error();
       const { url } = await res.json();
@@ -1847,14 +1836,12 @@ function PdfUploadField({ label, value, onChange, toast }) {
     if (!file) return;
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     setUploading(true);
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
@@ -1892,14 +1879,12 @@ function LogoUploadField({ label, value, onChange, toast }) {
     if (!file) return;
     const fd = new FormData();
     fd.append("file", file);
-    const token = getCFAccessToken();
     setUploading(true);
     try {
       const res = await fetch(`${API}/api/admin/upload`, {
         method: "POST",
         credentials: "include",
         body: fd,
-        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
       });
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
