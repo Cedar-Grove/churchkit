@@ -19,6 +19,18 @@ brand file, not the example's:
 `churchkit dev` installs Docker first if it is missing — after showing you
 the exact commands and asking. It never installs anything silently.
 
+If Docker is installed and running but `dev` still cannot reach it, the
+usual cause is group membership rather than the daemon:
+
+```bash
+sudo usermod -aG docker $USER
+newgrp docker          # or log out and back in
+```
+
+A shell that was already open keeps its old groups, which is why this can
+look like it did not work. The `docker` group is equivalent to root on that
+machine.
+
 ```bash
 churchkit dev <slug> --dry-run   show the plan, change nothing
 churchkit dev <slug> --logs      follow output

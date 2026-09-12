@@ -14,10 +14,45 @@ import { run, has } from './run.mjs';
  * explicit choice to skip the question, not a default.
  */
 
+/**
+ * Why `docker info` failed, which is not the same question as whether the
+ * daemon is running.
+ *
+ * A stopped daemon and a user who is not in the docker group both fail this
+ * check, and telling someone to start a daemon that is already running
+ * sends them in the wrong direction. So the reason is read out of docker's
+ * own stderr rather than assumed.
+ */
+export function classifyDockerError(stderr) {
+	const text = (stderr || '').toLowerCase();
+
+	// The socket exists; this user may not open it. Almost always group
+	// membership, which does not apply until a new login session.
+	if (text.includes('permission denied')) return 'permission';
+
+	// Nothing listening on the socket at all.
+	if (
+		text.includes('cannot connect to the docker daemon') ||
+		text.includes('is the docker daemon running') ||
+		text.includes('no such file or directory')
+	) return 'stopped';
+
+	return 'unknown';
+}
+
 export function dockerState() {
-	if (!has('docker')) return { installed: false, running: false };
+	if (!has('docker')) return { installed: false, running: false, reason: 'absent' };
+
 	const info = spawnSync('docker', ['info'], { encoding: 'utf8', stdio: 'pipe' });
-	return { installed: true, running: info.status === 0 };
+	if (info.status === 0) return { installed: true, running: true, reason: 'ok' };
+
+	const stderr = info.stderr ?? '';
+	return {
+		installed: true,
+		running: false,
+		reason: classifyDockerError(stderr),
+		stderr: stderr.trim(),
+	};
 }
 
 /** Whether `docker compose` (v2 plugin) is available. */
@@ -133,10 +168,30 @@ export async function ensureDocker({ assumeYes = false, dryRun = false } = {}) {
 	if (state.installed && state.running && hasCompose()) return true;
 
 	if (state.installed && !state.running) {
-		console.log('\nDocker is installed but its daemon is not responding.');
-		console.log(platform() === 'linux'
-			? '  Start it with: sudo systemctl start docker'
-			: '  Start Docker Desktop, wait for it to report "running", then try again.');
+		if (state.reason === 'permission') {
+			const user = process.env.USER ?? '$USER';
+			console.log('\nThe Docker daemon is running, but this user cannot reach its socket.');
+			console.log('  Add yourself to the docker group:\n');
+			console.log(`    sudo usermod -aG docker ${user}`);
+			console.log('    newgrp docker          # or log out and back in\n');
+			console.log('  Group membership does not apply to a shell that was already open,');
+			console.log('  which is why this can persist after the command appears to work.');
+			console.log('  Note: the docker group is equivalent to root on this machine.');
+			if (state.stderr) console.log(`\n  Docker said: ${state.stderr.split('\n')[0]}`);
+			return false;
+		}
+
+		if (state.reason === 'stopped') {
+			console.log('\nDocker is installed but its daemon is not running.');
+			console.log(platform() === 'linux'
+				? '  Start it with: sudo systemctl start docker'
+				: '  Start Docker Desktop, wait for it to report "running", then try again.');
+			return false;
+		}
+
+		// Something else entirely. Do not guess — show what docker reported.
+		console.log('\nDocker is installed but `docker info` failed:');
+		console.log(state.stderr ? `\n  ${state.stderr.split('\n').slice(0, 4).join('\n  ')}\n` : '  (no output)');
 		return false;
 	}
 

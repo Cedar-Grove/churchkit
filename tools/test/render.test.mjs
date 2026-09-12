@@ -102,3 +102,35 @@ test('toSettingsSql tolerates a brand with no optional sections', () => {
 	const bare = { slug: 'x', identity: { name: 'X' }, contact: {}, urls: {} };
 	assert.doesNotThrow(() => toSettingsSql(bare));
 });
+
+import { classifyDockerError } from '../src/lib/docker.mjs';
+
+// A stopped daemon and a user outside the docker group both make
+// `docker info` fail. Telling someone to start a daemon that is already
+// running sends them the wrong way, so the two must stay distinguishable.
+test('classifyDockerError separates a permission problem from a stopped daemon', () => {
+	assert.equal(
+		classifyDockerError(
+			'permission denied while trying to connect to the Docker daemon socket at ' +
+			'unix:///var/run/docker.sock: dial unix /var/run/docker.sock: connect: permission denied'
+		),
+		'permission'
+	);
+	assert.equal(
+		classifyDockerError('Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?'),
+		'stopped'
+	);
+});
+
+test('classifyDockerError treats a missing rootless socket as stopped', () => {
+	assert.equal(
+		classifyDockerError('dial unix /run/user/1000/docker.sock: connect: no such file or directory'),
+		'stopped'
+	);
+});
+
+test('classifyDockerError does not guess at an unfamiliar failure', () => {
+	assert.equal(classifyDockerError('context deadline exceeded'), 'unknown');
+	assert.equal(classifyDockerError(''), 'unknown');
+	assert.equal(classifyDockerError(undefined), 'unknown');
+});
