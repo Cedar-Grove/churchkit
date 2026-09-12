@@ -28,9 +28,13 @@ function getYouTubeId(url: string) {
   const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return match ? match[1] : null;
 }
+
+const description = settings.church_name
+  ? `Browse sermons and messages from ${settings.church_name}.`
+  : 'Browse sermons and messages.';
 ---
 
-<Layout title="Sermons & Media" description="Browse sermons and messages.">
+<Layout title="Sermons & Media" description={description}>
   <Nav />
 
   <section class="page-header">

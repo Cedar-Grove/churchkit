@@ -26,9 +26,13 @@ function formatEventDate(dateStr: string | null) {
     time: formatTime(d, formats),
   };
 }
+
+const description = settings.church_name
+  ? `Upcoming events, gatherings and studies at ${settings.church_name}.`
+  : 'Upcoming events, gatherings and studies.';
 ---
 
-<Layout title="Events" description="Upcoming events, gatherings and studies.">
+<Layout title="Events" description={description}>
   <Nav />
 
   <section class="page-header">

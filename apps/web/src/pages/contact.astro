@@ -22,9 +22,11 @@ const serviceDays: [string, string[]][] = Object.entries(
 )
   .filter(([, times]) => Array.isArray(times) && times.length > 0)
   .map(([day, times]) => [day.charAt(0).toUpperCase() + day.slice(1), times]);
+
+const description = settings.church_name ? `Get in touch with ${settings.church_name}.` : 'Get in touch with us.';
 ---
 
-<Layout title="Contact" description="Get in touch with us.">
+<Layout title="Contact" description={description}>
   <Nav />
 
   <section class="page-header">

@@ -3,11 +3,17 @@ import Layout from '../layouts/Layout.astro';
 import HoneypotField from '../components/HoneypotField.astro';
 import TurnstileWidget from '../components/TurnstileWidget.astro';
 import { env } from '../lib/env';
+import { getSettings } from '../lib/api';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+
+const settings = await getSettings(env.API_BASE).catch(() => ({} as any));
+const description = settings.church_name
+  ? `Share a prayer request with ${settings.church_name} — we'd love to pray for you.`
+  : "Share a prayer request with us — we'd love to pray for you.";
 ---
 
-<Layout title="Prayer Request" description="Share a prayer request with us — we'd love to pray for you.">
+<Layout title="Prayer Request" description={description}>
   <Nav />
 
   <section class="page-header">
