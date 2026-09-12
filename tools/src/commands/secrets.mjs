@@ -160,10 +160,17 @@ async function secretsWizard({ slug, file, dryRun }) {
 
 	try {
 		for (const [group, entries] of groupedSecrets()) {
-			const already = entries.filter((s) => values[s.name]).length;
-			const header = await ask(
-				`── ${group} (${already}/${entries.length} already set) — configure now? [Y/n/skip] `
-			);
+			const missing = entries.filter((s) => !values[s.name]);
+			const already = entries.length - missing.length;
+			// "4/6 already set" alone reads as "good enough, skip" even when
+			// what's missing is the one credential that actually matters.
+			// Only worth spelling out in the ambiguous case — some set, some
+			// not — where that's genuinely unclear from the count alone; a
+			// fresh (0 set) or complete (all set) group already says enough.
+			const status = already > 0 && missing.length > 0
+				? `${already}/${entries.length} set, missing ${missing.map((s) => s.name).join(', ')}`
+				: `${already}/${entries.length} set`;
+			const header = await ask(`── ${group} (${status}) — configure now? [Y/n/skip] `);
 			if (/^(n|no|skip)/i.test(header.trim())) {
 				console.log('  skipped\n');
 				continue;
