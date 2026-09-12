@@ -6,11 +6,13 @@ ChurchKit gives a church its own branded website, iOS/Android app, and staff
 admin panel, backed by the Planning Center data it already maintains. Change
 a colour, a name, and a logo in one file, and the whole stack follows.
 
-> **Status: pre-release.** All four applications are extracted and generic,
-> the provisioning tooling works, and everything builds and passes its tests.
-> What has *not* happened yet is a real deployment: no ChurchKit instance is
-> serving a live congregation, and the first one will find things. Treat it
-> as ready to try, not as proven.
+> **Status: early.** All four applications are extracted and generic, the
+> provisioning tooling works, and everything builds and passes its tests.
+> One church has migrated its live site, admin panel and mobile app onto
+> it — website, admin and API running on Cloudflare, the app installed and
+> receiving push on a real device — and that first real deployment did find
+> things, since fixed. Its custom domain isn't attached yet. Treat this as
+> ready to try, not as long-proven.
 
 ---
 

@@ -76,6 +76,18 @@ API, but it stops a request that merely guesses the header name.
 With `ADMIN_AUTH_MODE` unset the admin API refuses everything. That is
 deliberate: an unconfigured deployment is inaccessible, never open.
 
+## Checking credentials actually work
+
+`churchkit secrets` is Cloudflare-only — here, every optional credential
+(Planning Center, YouTube, OneSignal, Resend, Turnstile, Bible Brain /
+API.Bible) is just another environment variable passed to `server.ts`.
+Nothing checks that a value you set is *correct* rather than merely
+present until something calls that provider. The admin panel's **System
+Health** page does exactly that: it calls each configured provider for
+real and reports whether it actually authenticates, same as on Cloudflare
+— `runHealthChecks()` only reads from `env`, so it doesn't care which host
+supplied it.
+
 ## What you lose
 
 - **The cache-warming cron becomes an interval** in the server process, so

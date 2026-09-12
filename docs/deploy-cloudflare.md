@@ -66,6 +66,20 @@ cd apps/api && npx wrangler secret put CF_ACCESS_AUD
 Until you do, the admin API refuses every request and says so. That is
 deliberate: an unconfigured deployment is inaccessible, never open.
 
+## Checking secrets actually work
+
+`churchkit secrets <slug> --status` confirms a credential's *name* is set on
+the Worker, but Cloudflare never returns values, so it can't tell a correct
+key from a typo. The admin panel's **System Health** page does: it calls
+each configured provider for real — Planning Center, YouTube, OneSignal,
+Resend, Turnstile, Bible Brain / API.Bible — and reports whether it actually
+authenticates, not just whether something is set. Check it after every
+`secrets` push.
+
+Testing push notifications there does not require notifying every real
+subscriber: the **Mobile App** page's device list has a "Send Test" button
+per registered device, targeting only that one phone.
+
 ## Trying it first
 
 ```bash

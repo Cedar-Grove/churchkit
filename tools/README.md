@@ -51,12 +51,33 @@ Two steps need decisions a script should not make for a church:
 
 `secrets` reads an env-format file from your own machine and pipes it to
 `wrangler secret bulk` over stdin, so values never appear in shell history
-or a process listing. Run `churchkit secrets <slug>` with no file and it
-prints a template of every credential, grouped, with what each one enables.
+or a process listing.
+
+| Flag | Does |
+|---|---|
+| *(none)* | Push whatever's in the file (`.secrets.<slug>` by default) |
+| `--init` | Write an annotated template — every credential, grouped, with where to find each one |
+| `--wizard` | Prompt for each credential one group at a time, save after every answer, then offer to push |
+| `--status` | List which of the known secrets are actually set on the deployed Worker |
+| `--file=<path>` | Use a different file than `.secrets.<slug>` |
+| `--dry-run` | Print what would be pushed without sending anything |
+
+`--wizard` is the easiest way to gather credentials over more than one
+sitting: it writes the file to disk after every single answer (not just at
+the end), so a `Ctrl+C` mid-session loses nothing already typed, and a group
+that's only partly filled in says exactly which fields are still missing
+rather than a bare count that reads as "good enough."
 
 Blank values are skipped rather than set to an empty string: the API treats
 an empty credential as absent, and an empty secret is harder to notice than
 a missing one.
+
+`--status` only proves a secret's *name* is set — Cloudflare never returns
+values, so it cannot tell a correct credential from a typo. For that,
+use the admin panel's **System Health** page after deploying: it calls
+each configured provider for real (Planning Center, YouTube, OneSignal,
+Resend, Turnstile, Bible Brain / API.Bible) and reports whether it actually
+authenticates.
 
 Nothing here is required. A church that sets none of them gets a working
 website with pages, staff, ministries and forms — just no video, push,

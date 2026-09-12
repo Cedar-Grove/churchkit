@@ -109,6 +109,38 @@ JSX admin can import it without a build step.
   admin's picker, with a comment asking that both be kept in sync. A comment
   is not a mechanism; they now come from `@churchkit/config/font-presets`,
   so adding a preset is one edit.
+- `device_tokens`'s real D1 schema and the columns `push.ts`/`admin.ts`
+  queried had quietly diverged (`app_version`/`registered_at`/`last_seen`
+  vs. the columns the table actually had) — invisible until the first real
+  push registration and the first real device-stats read, because nothing
+  before this had ever exercised either path against a real database.
+  `ensureDeviceTokensColumns()` in `lib/data.ts` now reconciles this at
+  runtime, but the real fix is what this whole list is about: a fixture
+  that never runs the real code path hides drift indefinitely.
+- `churchkit brand` wrote the website's logos but never the mobile app's
+  icon, so `HomeScreen.tsx`'s `require('../../assets/icon.png')` had no
+  file to resolve — every mobile build against a real church's brand.json
+  failed on its very first bundle, because no ChurchKit mobile app had
+  been built from one before. `brand.mjs`'s `installMobileIcon()` now
+  copies it, the same way `installImages()` already did for the web.
+- npm workspaces hoists whatever it can to the repository root. Two
+  packages needing different major versions of `react` (this app pins 19,
+  the web/admin Astro islands pin 18) nest privately wherever they
+  conflict — but a package with no such conflict (`@react-navigation/core`)
+  hoists cleanly to the root and then resolves `react` from *there*,
+  silently landing on the wrong version. Two live React instances end up
+  in one Metro bundle with no build warning; the only symptom is a runtime
+  "Invalid hook call". `apps/mobile/metro.config.js` now forces every
+  requester's `react` to resolve from this app's own `node_modules`
+  regardless of where the requester physically lives.
+- `babel-preset-expo` worked by accident in a plain single-package
+  install (`expo` depends on it, and hoisting put it somewhere reachable)
+  but was never actually declared anywhere. The very first install in this
+  workspace that needed `expo` nested in its own `node_modules` buried
+  `babel-preset-expo` with it, out of reach of the root-hoisted
+  `@babel/core` — "Cannot find module 'babel-preset-expo'" on the very
+  first bundle. Declared explicitly now, pinned to what `expo` itself
+  expects.
 
 ## Verifying
 
@@ -181,13 +213,23 @@ the finish.
 ## State
 
 All four apps are ported and generic. Provisioning, seeding and the local
-Docker stack work. 45 tests in `apps/api`, 26 in `tools`.
+Docker stack work. 48 tests in `apps/api`, 28 in `tools`.
 
-**Nothing has been deployed to real infrastructure.** No ChurchKit instance
-serves a live congregation.
+**One real deployment now exists.** A church migrating its live site onto
+ChurchKit has its website, admin panel and API running on Cloudflare
+Workers, its Planning Center data flowing through for real, and its mobile
+app built and running on a real device (Android, via a local custom dev
+client) with push notifications reaching it end to end. This is the
+deployment that found the four most recent entries in "Things that have
+bitten" above — real infrastructure and a real device surfaced drift and
+gaps no fixture had exercised. Its custom domains are not yet attached;
+it is still reachable only at its `*.workers.dev` addresses pending an
+explicit cutover decision.
 
 Known open work:
-- Migrating an existing church's live data — `pages`, `staff`,
+- The custom-domain cutover itself for that deployment: pointing its real
+  domains at these Workers and retiring whatever served them before.
+- Migrating an existing church's live data in general — `pages`, `staff`,
   `carousel_slides`, `sermon_notes`, and especially `device_tokens`, whose
   OneSignal player IDs cannot be recreated. Lose them and push silently
   stops reaching everyone who already has the app.
