@@ -183,7 +183,7 @@ test('the local wrangler config points at the real entry point and a local datab
 
 	const api = resolve(REPO_ROOT, 'apps/api');
 	const template = parseJsonc(readFileSync(resolve(api, 'wrangler.jsonc.example'), 'utf8'));
-	const config = parseJsonc(localWranglerConfig({ slug: 'my-church', adminPort: '4322', template }));
+	const config = parseJsonc(localWranglerConfig({ slug: 'my-church', adminPort: '4322', template, adminDevBypass: 'test-bypass' }));
 
 	assert.equal(config.main, template.main);
 	assert.ok(existsSync(resolve(api, config.main)), `${config.main} must exist`);
@@ -195,6 +195,11 @@ test('the local wrangler config points at the real entry point and a local datab
 
 	// Admin CORS has to allow the browser origin the panel is served from.
 	assert.ok(config.vars.ADMIN_ALLOWED_ORIGINS.includes('http://localhost:4322'));
+
+	// wrangler dev --local only reads bindings from this file's `vars` — it
+	// never forwards the launching process's own env — so the admin bypass
+	// has to land here too, not just in docker/.env.
+	assert.equal(config.vars.ADMIN_DEV_BYPASS, 'test-bypass');
 });
 
 import { wranglerTarget } from '../src/commands/seed.mjs';
