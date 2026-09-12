@@ -16,7 +16,7 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { getPage } from '../lib/api';
 import { RESERVED_SLUGS } from '../lib/nav';
-import { env } from 'cloudflare:workers';
+import { env } from '../lib/env';
 
 const slug = (Astro.params.slug ?? '').replace(/^\/+|\/+$/g, '');
 

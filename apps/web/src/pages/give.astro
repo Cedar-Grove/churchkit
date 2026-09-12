@@ -12,7 +12,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { getSettings, getPage } from '../lib/api';
-import { env } from 'cloudflare:workers';
+import { env } from '../lib/env';
 
 const settings = await getSettings(env.API_BASE).catch(() => ({} as any));
 

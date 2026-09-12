@@ -1,8 +1,14 @@
 /**
- * ChurchKit API — Cloudflare Worker.
+ * ChurchKit API — request routing and scheduled work.
+ *
+ * Nothing in here is Cloudflare-specific. The Worker entry point is
+ * worker.ts; a Node server entry is server.ts. Both hand requests to the
+ * same `handleRequest` below, so the two hosts cannot drift apart.
  *
  *   src/
- *   ├── index.ts              ← main router (this file)
+ *   ├── app.ts                ← routing and scheduled work (this file)
+ *   ├── worker.ts             ← Cloudflare Workers entry
+ *   ├── server.ts             ← Node entry (self-hosted)
  *   ├── types.ts              ← Env interface; everything but DB is optional
  *   ├── lib/
  *   │   ├── capabilities.ts   ← what this deployment can serve
@@ -70,7 +76,7 @@ import {
 	handleCheckInPrecheck,
 	handleSubmitCheckIn,
 } from './routes/auth';
-import { verifyAccessJWT, handleAdmin } from './routes/admin';
+import { handleAdmin } from './routes/admin';
 import { handleBibleAudio, handleBibleText } from './routes/bible';
 import { purgeExpiredRateLimits } from './lib/rateLimit';
 import { isLocalDevRequest } from './lib/localAdmin';
@@ -166,11 +172,18 @@ async function route(path: string, method: string, request: Request, env: Env, o
 		// a deployed Worker's never is. See lib/localAdmin.ts.
 		const local = isLocalDevRequest(request, env);
 
-		// With no Access audience configured there is no way to verify an
-		// admin, so the panel is unavailable rather than unprotected.
-		if (!local && !caps.admin) return notConfigured('admin');
+		// With no way to verify an admin, the panel is unavailable rather
+		// than unprotected.
+		if (!local && !caps.admin && !env.ADMIN_AUTH) return notConfigured('admin');
 
-		const auth = local ? { ok: true as const } : await verifyAccessJWT(request, env);
+		// Authentication comes from the host adapter — Cloudflare Access on
+		// Workers, whatever a self-hosted deployment configured otherwise.
+		// See platform/adminAuth.ts.
+		const auth = local
+			? { ok: true as const }
+			: env.ADMIN_AUTH
+				? await env.ADMIN_AUTH.verify(request)
+				: { ok: false as const, reason: 'no admin authentication configured' };
 		if (!auth.ok) {
 			return new Response(JSON.stringify({ error: `Unauthorized: ${auth.reason}` }), {
 				status: 401,
@@ -186,65 +199,64 @@ async function route(path: string, method: string, request: Request, env: Env, o
 	return err('Not found', 404);
 }
 
-export default {
-	async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
-		const url = new URL(request.url);
-		const path = url.pathname;
-		const method = request.method;
-		const origin = request.headers.get('Origin') ?? '';
+/**
+ * Handle one request. Shared by every host.
+ */
+export async function handleRequest(request: Request, env: Env): Promise<Response> {
+	const url = new URL(request.url);
+	const path = url.pathname;
+	const method = request.method;
+	const origin = request.headers.get('Origin') ?? '';
 
-		if (method === 'OPTIONS') {
-			const headers = path.startsWith('/api/admin/') ? adminCorsHeaders(origin, env) : CORS_HEADERS;
-			return new Response(null, { headers });
+	if (method === 'OPTIONS') {
+		const headers = path.startsWith('/api/admin/') ? adminCorsHeaders(origin, env) : CORS_HEADERS;
+		return new Response(null, { headers });
+	}
+
+	try {
+		// Most responses rely on an HTTP cache in front of this API, driven
+		// by each response's own Cache-Control header. The upstream-backed
+		// data (lib/cache.ts) is the exception: it is cached in the database
+		// and kept warm by runScheduled() below.
+		return await route(path, method, request, env, origin);
+	} catch (e: any) {
+		console.error('Unhandled error:', e?.message, e?.stack);
+		if (path.startsWith('/api/admin/')) {
+			return new Response(JSON.stringify({ error: `Error: ${e?.message ?? 'Unknown error'}` }), {
+				status: 500,
+				headers: { ...adminCorsHeaders(origin, env), 'Content-Type': 'application/json' },
+			});
 		}
+		return err(`Error: ${e?.message ?? 'Unknown error'}`, 500);
+	}
+}
 
-		try {
-			// Most responses rely on Cloudflare's zone-level cache, driven by
-			// each response's own Cache-Control header — a normal zone cache
-			// purge picks up fresh content there. The upstream-backed data
-			// (lib/cache.ts) is the exception: it is cached in D1 and kept
-			// warm by the scheduled() handler below rather than by purges.
-			return await route(path, method, request, env, origin);
-		} catch (e: any) {
-			console.error('Unhandled error:', e?.message, e?.stack);
-			if (path.startsWith('/api/admin/')) {
-				return new Response(JSON.stringify({ error: `Error: ${e?.message ?? 'Unknown error'}` }), {
-					status: 500,
-					headers: { ...adminCorsHeaders(origin, env), 'Content-Type': 'application/json' },
-				});
-			}
-			return err(`Error: ${e?.message ?? 'Unknown error'}`, 500);
-		}
-	},
+/**
+ * Periodic work: keep the caches warm so a real page load never pays for a
+ * slow upstream fetch, and clear expired rate-limit windows.
+ *
+ * Called by the Workers cron trigger, or by an interval in the Node server.
+ * Every target is skipped cleanly on a deployment that has not configured
+ * it, so this costs nothing on a church using neither YouTube nor Planning
+ * Center.
+ */
+export async function runScheduled(env: Env): Promise<void> {
+	const caps = capabilities(env);
+	const work: Promise<unknown>[] = [
+		// Nothing reads a rate-limit window once it has rolled over, so
+		// clear them out here rather than letting the table grow forever.
+		purgeExpiredRateLimits(env),
+	];
 
-	/**
-	 * Proactively refreshes the D1-backed caches so a real page load never
-	 * has to be the one that pays for a slow upstream fetch. Each cache's
-	 * own TTL (and, for YouTube, the shared daily call budget in
-	 * lib/cache.ts) still decides whether a given run fetches anything.
-	 *
-	 * Every warm target is skipped cleanly on a deployment that has not
-	 * configured it, so this costs nothing on a church using neither
-	 * YouTube nor Planning Center.
-	 */
-	async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
-		const caps = capabilities(env);
-		const work: Promise<unknown>[] = [
-			// Nothing reads a rate-limit window once it has rolled over, so
-			// clear them out here rather than letting the table grow forever.
-			purgeExpiredRateLimits(env),
-		];
+	if (caps.sermons) work.push(getMergedSermons(env), getLiveStream(env));
+	if (caps.events) {
+		const settings = await getSettings(env);
+		work.push(
+			getRegistrationSignups(env),
+			getFutureEventInstances(env),
+			getFeaturedEvent(settings.featured_event_id || null, env),
+		);
+	}
 
-		if (caps.sermons) work.push(getMergedSermons(env), getLiveStream(env));
-		if (caps.events) {
-			const settings = await getSettings(env);
-			work.push(
-				getRegistrationSignups(env),
-				getFutureEventInstances(env),
-				getFeaturedEvent(settings.featured_event_id || null, env),
-			);
-		}
-
-		await Promise.allSettled(work);
-	},
-} satisfies ExportedHandler<Env>;
+	await Promise.allSettled(work);
+}

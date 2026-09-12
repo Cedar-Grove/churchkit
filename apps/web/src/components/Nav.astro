@@ -1,7 +1,7 @@
 ---
 import { getSettings, getMinistries, getCapabilities } from '../lib/api';
 import { buildNav } from '../lib/nav';
-import { env } from 'cloudflare:workers';
+import { env } from '../lib/env';
 
 const [settings, ministries, capabilities] = await Promise.all([
   getSettings(env.API_BASE).catch(() => ({})),

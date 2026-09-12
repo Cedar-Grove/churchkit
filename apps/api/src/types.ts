@@ -1,3 +1,5 @@
+import type { Database, Storage, AdminAuth } from './platform/types';
+
 /**
  * ChurchKit API environment.
  *
@@ -13,12 +15,18 @@
  */
 export interface Env {
 	// ── Required ────────────────────────────────────────────────────
-	/** D1 database. Content, caches, budgets and rate limits live here. */
-	DB: D1Database;
+	/**
+	 * The database. Content, caches, budgets and rate limits live here.
+	 *
+	 * Typed as the platform interface rather than D1Database directly:
+	 * Cloudflare's D1 satisfies it structurally, and so does the SQLite
+	 * driver a self-hosted deployment uses. See platform/types.ts.
+	 */
+	DB: Database;
 
 	// ── Optional: media uploads ─────────────────────────────────────
-	/** R2 bucket for admin image uploads. Without it, uploads are refused. */
-	MEDIA?: R2Bucket;
+	/** Object storage for admin image uploads. Without it, uploads are refused. */
+	MEDIA?: Storage;
 	/** Public base URL serving MEDIA, e.g. https://media.example.org */
 	MEDIA_PUBLIC_URL?: string;
 
@@ -90,6 +98,13 @@ export interface Env {
 	TURNSTILE_SECRET?: string;
 
 	// ── Optional: scripture ─────────────────────────────────────────
+	/**
+	 * How admin requests are authenticated. Supplied by the host adapter:
+	 * Cloudflare Access on Workers, or whichever scheme a self-hosted
+	 * deployment configured. See platform/adminAuth.ts.
+	 */
+	ADMIN_AUTH?: AdminAuth;
+
 	/** Bible Brain / Faith Comes By Hearing — audio and text. */
 	BIBLE_BRAIN_API_KEY?: string;
 	/** API.Bible (scripture.api.bible) — additional translations. */

@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "ChurchKit API — Cloudflare Worker.",
+  "description": "ChurchKit API \u2014 Cloudflare Worker.",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:node": "esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.mjs --external:node:*",
+    "start:node": "node dist/server.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0",
-    "wrangler": "^3.99.0"
+    "wrangler": "^3.99.0",
+    "esbuild": "^0.24.0"
   }
 }
