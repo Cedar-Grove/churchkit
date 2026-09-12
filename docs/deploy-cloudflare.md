@@ -1,17 +1,21 @@
-# Deploying ChurchKit
+# Deploying to Cloudflare
 
-This covers deploying to Cloudflare, which is the default and the path with
-the least to configure. To run it on your own server instead, see
-[self-hosting-node.md](self-hosting-node.md).
+One of two ways to run ChurchKit. This is the default — the least to set up,
+and what the project is tuned for. The other is
+[deploy-self-hosted.md](deploy-self-hosted.md), which needs no Cloudflare
+account at all.
+
+**ChurchKit does not require Cloudflare.** It requires *a* host. This guide
+happens to use Cloudflare's.
 
 ## What you will need
 
 Each church runs its own accounts. Nothing is shared with the project or
 between deployments.
 
-| Service | Used for | Required? |
+| Service | Used for | Needed? |
 |---|---|---|
-| Cloudflare | Workers, D1, R2, Access, Turnstile | **yes** (Workers Paid, ~$5/mo) |
+| Cloudflare | Workers, D1, R2, Access, Turnstile | for **this** guide (Workers Paid, ~$5/mo) |
 | Planning Center | people, services, giving, check-ins, calendar | no |
 | Resend | transactional email from forms | no |
 | OneSignal | push notifications | no |
@@ -20,7 +24,8 @@ between deployments.
 | Sentry | error monitoring | no |
 | Apple + Google developer accounts | publishing the mobile app | only for the app |
 
-Only the first is required, and only because something has to run the code.
+Only the first row is needed here, and only because something has to run the
+code — swap it for your own server and the rest of the table is unchanged.
 Every other row is a feature you can leave off: `GET /api/capabilities`
 reports what a deployment can serve, and the website and app hide the rest.
 `churchkit doctor` lists each unset credential and what it switches off.
@@ -68,7 +73,8 @@ npx churchkit dev example-church
 ```
 
 Runs the whole stack locally in Docker with no accounts anywhere. See
-[`docker/README.md`](../docker/README.md).
+[`docker/README.md`](../docker/README.md). That needs no Cloudflare account
+either.
 
 ## Publishing the mobile app
 

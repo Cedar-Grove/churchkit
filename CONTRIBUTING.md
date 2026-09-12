@@ -47,8 +47,9 @@ npm run dev -w apps/api                   # needs apps/api/wrangler.jsonc
 npm run dev -w apps/web
 ```
 
-`docs/self-hosting.md` covers deploying to Cloudflare, and
-`docs/self-hosting-node.md` running it without Cloudflare at all.
+`docs/deploy-cloudflare.md` and `docs/deploy-self-hosted.md` cover the two
+ways to run it. Neither is more supported than the other in the code —
+`apps/api/src/app.ts` knows nothing about either host.
 
 ## The one rule that matters: no church-specific code
 

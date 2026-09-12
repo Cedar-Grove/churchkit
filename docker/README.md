@@ -24,9 +24,10 @@ churchkit dev <slug> --attach    stay in the foreground
 
 ## This is not a deployment target
 
-No TLS, no Cloudflare Access, and an admin bypass that exists only because
-Access cannot run on a laptop. ChurchKit deploys to Cloudflare Workers;
-these containers exist so you can see it working first.
+No TLS, no admin authentication worth the name, and a bypass that exists
+only because neither Cloudflare Access nor a reverse proxy runs on a laptop.
+These containers exist so you can see ChurchKit working before choosing a
+host — see `docs/deploy-cloudflare.md` or `docs/deploy-self-hosted.md`.
 
 The API runs in workerd via `wrangler dev --local`, with a local D1 database
 under `.wrangler/state`. Delete that directory to start over. It is a
@@ -36,10 +37,9 @@ church's real data.
 
 ## The admin bypass
 
-Cloudflare Access is what authenticates admins in a real deployment, and it
-cannot exist locally — there is no edge injecting a signed JWT. So
-`ADMIN_DEV_BYPASS` (generated per machine into `docker/.env`) skips that
-check.
+A real deployment authenticates admins with Cloudflare Access or a reverse
+proxy of your own. Neither exists on a laptop, so `ADMIN_DEV_BYPASS`
+(generated per machine into `docker/.env`) skips the check.
 
 It cannot weaken a deployment, and not because of a flag anyone has to
 remember: it applies only to requests whose **own hostname is loopback**,

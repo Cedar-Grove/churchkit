@@ -89,7 +89,7 @@ async function main(): Promise<void> {
 	if (env.ADMIN_AUTH?.name === 'none') {
 		console.warn(
 			'⚠ No admin authentication configured (ADMIN_AUTH_MODE). The admin API will ' +
-			'refuse every request until one is set. See docs/self-hosting.md.'
+			'refuse every request until one is set. See docs/deploy-self-hosted.md.'
 		);
 	}
 

@@ -25,15 +25,21 @@ a colour, a name, and a logo in one file, and the whole stack follows.
 | **`packages/brand`** | One `brand.json` → CSS custom properties + mobile theme |
 | **`tools`** | The `churchkit` command — provision, secrets, deploy, doctor, dev |
 
-Data lives in Cloudflare D1 and R2. Everything a church actually cares
-about — people, giving, groups, services, check-ins — stays in Planning
-Center, where it belongs.
+Everything a church actually cares about — people, giving, groups, services,
+check-ins — stays in Planning Center, where it belongs. ChurchKit stores
+only what Planning Center has no place for: pages, staff, carousel slides,
+sermon notes.
 
-**Cloudflare is the default, not a requirement.** The same code runs on an
-ordinary Node server with SQLite and the local filesystem — see
-[docs/self-hosting-node.md](docs/self-hosting-node.md), which is honest
-about what you take on in exchange (TLS, caching, backups, and
-authenticating your own admins).
+**Two ways to run it, neither required.**
+
+- [Cloudflare](docs/deploy-cloudflare.md) — Workers, D1 and R2. The default,
+  and the least to set up.
+- [Your own server](docs/deploy-self-hosted.md) — Node and SQLite, no
+  Cloudflare account. Honest about what you take on in exchange: TLS,
+  caching, backups, and authenticating your own admins.
+
+`apps/api/src/app.ts` knows about neither. Both hosts hand it the same
+requests.
 
 ## Make it yours
 
@@ -77,8 +83,10 @@ npx churchkit doctor     my-church            # what is configured, and what eac
 Nothing beyond a database is required. A church that configures no
 credentials at all still gets a working website with pages, staff,
 ministries and forms — it just has no video, push, email or member login.
-See [`docs/self-hosting.md`](docs/self-hosting.md) for what each account
-gives you, and [`docker/README.md`](docker/README.md) for the local stack.
+See [`docs/deploy-cloudflare.md`](docs/deploy-cloudflare.md) or
+[`docs/deploy-self-hosted.md`](docs/deploy-self-hosted.md) for what each
+account gives you, and [`docker/README.md`](docker/README.md) for the local
+stack.
 
 ## Licence and expectations
 

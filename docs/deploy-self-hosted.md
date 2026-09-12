@@ -1,7 +1,9 @@
-# Self-hosting without Cloudflare
+# Deploying on your own server
 
-Cloudflare is where ChurchKit is tuned to run, and it is the path with the
-least to configure. It is not required.
+The second of two ways to run ChurchKit, and the one that needs no
+Cloudflare account. The other is
+[deploy-cloudflare.md](deploy-cloudflare.md), which is where the project is
+tuned to run and has the least to configure.
 
 The same code runs on an ordinary server with SQLite and the local
 filesystem. What you take on in exchange is everything Cloudflare otherwise

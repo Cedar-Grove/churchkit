@@ -50,7 +50,7 @@ immediately with mitigation guidance.
   YouTube, Sentry, or other third-party services — report those to the
   vendor.
 - Findings that require an attacker to already hold valid admin credentials
-  or Cloudflare account access.
+  or access to the account hosting the deployment.
 - Missing hardening headers with no demonstrated impact.
 
 ## For operators

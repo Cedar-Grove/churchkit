@@ -20,6 +20,12 @@ npx churchkit provision my-church --dry-run
 A slug names a directory under `brands/` containing a `brand.json`. Start
 from `examples/example-church`.
 
+**`provision`, `secrets` and `deploy` target Cloudflare.** Running ChurchKit
+on your own server does not use them — see
+[`docs/deploy-self-hosted.md`](../docs/deploy-self-hosted.md), which is a
+handful of commands rather than a tool. `dev`, `brand` and `doctor` apply
+either way.
+
 ## Start with a dry run
 
 `--dry-run` prints every command without running any of them. Provisioning

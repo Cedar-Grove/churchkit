@@ -1,7 +1,11 @@
 # ChurchKit API — local development secrets.
+#
+# On Cloudflare these become Worker secrets; self-hosted they are ordinary
+# environment variables. Same names either way.
 # Copy to apps/api/.dev.vars and fill in. NEVER commit the filled copy.
 # Every value below is per-church: each deployment registers its own.
-# See docs/self-hosting.md for where to obtain each one.
+# See docs/deploy-cloudflare.md (or deploy-self-hosted.md) for where to
+# obtain each one.
 
 # ── Planning Center ─────────────────────────────────────────────
 # OAuth app (user login). PKCE flow — no client secret exists.
@@ -40,9 +44,22 @@ ONESIGNAL_API_KEY=
 YOUTUBE_API_KEY=
 YOUTUBE_CHANNEL_ID=
 
-# ── Admin auth (Cloudflare Access) ──────────────────────────────
-# Zero Trust > Access > your admin app > Application Audience (AUD) tag
+# ── Admin auth ──────────────────────────────────────────────────
+# How admin requests are authenticated. There is no default: an unset or
+# unrecognised mode leaves the admin API refusing everything.
+#   cloudflare-access  a signed JWT injected at Cloudflare's edge
+#   proxy-header       an identity header set by a reverse proxy you run
+ADMIN_AUTH_MODE=cloudflare-access
+
+# For cloudflare-access. Zero Trust > Access > your admin app >
+# Application Audience (AUD) tag.
 CF_ACCESS_AUD=
+
+# For proxy-header. Only as strong as your proxy's exclusivity: if the API
+# is reachable around it, anyone can send the header and become an admin.
+# See docs/deploy-self-hosted.md.
+ADMIN_PROXY_HEADER=x-forwarded-email
+ADMIN_PROXY_SHARED_SECRET=
 
 # ── Bot protection (Cloudflare Turnstile) ───────────────────────
 # Optional. With no secret set, form endpoints keep their other guards.
@@ -53,3 +70,10 @@ TURNSTILE_SECRET=
 BIBLE_BRAIN_API_KEY=
 # API.Bible (scripture.api.bible) — additional translations
 BIBLE_API_KEY=
+
+# ── Self-hosted only ────────────────────────────────────────────
+# Ignored on Cloudflare, where D1 and R2 arrive as bindings instead.
+# CHURCHKIT_DB=./data/churchkit.db
+# CHURCHKIT_MEDIA_DIR=./data/media
+# HOST=127.0.0.1
+# PORT=8787
