@@ -1,6 +1,7 @@
 ---
 import { getSettings, getCapabilities } from '../lib/api';
 import { env } from '../lib/env';
+import { logoWhite } from '../lib/logo';
 
 const [settings, capabilities] = await Promise.all([
   getSettings(env.API_BASE).catch(() => ({} as any)),
@@ -22,7 +23,9 @@ const social: [string, string][] = Object.entries(
 <footer class="footer">
   <div class="container footer__inner">
     <div class="footer__brand">
-      <img src="/images/logo-white.png" alt={churchName} class="footer__logo" />
+      {logoWhite
+        ? <img src={logoWhite} alt={churchName} class="footer__logo" />
+        : <p class="footer__wordmark">{churchName}</p>}
       {settings.tagline && <p class="footer__tagline">{settings.tagline}</p>}
     </div>
 
@@ -65,6 +68,7 @@ const social: [string, string][] = Object.entries(
   .footer__inner { display: flex; flex-wrap: wrap; gap: 48px; justify-content: space-between; }
   .footer__brand { max-width: 280px; }
   .footer__logo { height: 56px; width: auto; margin-bottom: 16px; }
+  .footer__wordmark { font-family: var(--font-heading); font-size: 28px; color: var(--white); margin-bottom: 12px; }
   .footer__tagline { font-family: var(--font-heading); font-size: 19px; line-height: 1.5; }
   .footer__col { display: flex; flex-direction: column; gap: 8px; }
   .footer__line { font-size: 14px; color: rgba(255, 255, 255, 0.72); text-decoration: none; }

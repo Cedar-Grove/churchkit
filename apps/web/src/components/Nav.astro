@@ -2,6 +2,7 @@
 import { getSettings, getMinistries, getCapabilities } from '../lib/api';
 import { buildNav } from '../lib/nav';
 import { env } from '../lib/env';
+import { logoDark } from '../lib/logo';
 
 const [settings, ministries, capabilities] = await Promise.all([
   getSettings(env.API_BASE).catch(() => ({})),
@@ -34,7 +35,9 @@ const isActive = (href: string) =>
 <header class="mast">
   <div class="container mast__inner">
     <a href="/" class="mast__logo" aria-label={`${churchName} — home`}>
-      <img src="/images/logo-dark.png" alt={churchName} width="1000" height="331" />
+      {logoDark
+        ? <img src={logoDark} alt={churchName} width="1000" height="331" />
+        : <span class="mast__wordmark">{churchName}</span>}
     </a>
 
     <nav class="mast__nav" aria-label="Main">
@@ -131,6 +134,7 @@ const isActive = (href: string) =>
   .mast__inner { height: var(--hdr-height); display: flex; align-items: center; justify-content: space-between; gap: 40px; }
   .mast__logo { display: flex; align-items: center; flex-shrink: 0; }
   .mast__logo img { height: 64px; width: auto; }
+  .mast__wordmark { font-family: var(--font-heading); font-size: 30px; color: var(--brand); white-space: nowrap; }
 
   .mast__nav { display: flex; align-items: center; gap: 30px; }
   .mast__link {
