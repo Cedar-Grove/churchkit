@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.1",
+    "@churchkit/config": "*",
     "astro": "^7.3.2",
     "@astrojs/node": "^11.1.5"
   },

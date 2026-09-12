@@ -8,56 +8,11 @@
  * whatever `packages/brand/generate.mjs` compiled from brand.json, so a
  * deployment that never touches Branding renders byte-identical output.
  *
- * The font list is duplicated (id + label only) in apps/admin's settings
- * UI for its <select> — see the comment there. Keep both in sync.
+ * The font pairings themselves live in @churchkit/config, shared with
+ * apps/admin's settings <select>.
  */
 
-interface FontStack {
-	family: string;
-	stack: string;
-}
-
-interface FontPreset {
-	label: string;
-	heading: FontStack;
-	body: FontStack;
-	display: FontStack;
-	webFontUrl: string;
-}
-
-export const FONT_PRESETS: Record<string, FontPreset> = {
-	// Matches the site's previous hardcoded Google Fonts link and tokens.css
-	// defaults exactly, so this preset changes nothing for anyone who
-	// hasn't touched Branding.
-	classic: {
-		label: 'Classic — Cormorant Garamond + Roboto',
-		heading: { family: 'Cormorant Garamond', stack: "'Cormorant Garamond', Georgia, serif" },
-		body: { family: 'Roboto', stack: 'Roboto, system-ui, -apple-system, sans-serif' },
-		display: { family: 'Roboto', stack: 'Roboto, system-ui, -apple-system, sans-serif' },
-		webFontUrl: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Roboto:wght@300;400;500;700;900&display=swap',
-	},
-	modern: {
-		label: 'Modern — Playfair Display + Inter',
-		heading: { family: 'Playfair Display', stack: "'Playfair Display', Georgia, serif" },
-		body: { family: 'Inter', stack: 'Inter, system-ui, -apple-system, sans-serif' },
-		display: { family: 'Inter', stack: 'Inter, system-ui, -apple-system, sans-serif' },
-		webFontUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap',
-	},
-	warm: {
-		label: 'Warm — Lora + Nunito Sans',
-		heading: { family: 'Lora', stack: 'Lora, Georgia, serif' },
-		body: { family: 'Nunito Sans', stack: "'Nunito Sans', system-ui, -apple-system, sans-serif" },
-		display: { family: 'Nunito Sans', stack: "'Nunito Sans', system-ui, -apple-system, sans-serif" },
-		webFontUrl: 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito+Sans:wght@300;400;600;700&display=swap',
-	},
-	minimal: {
-		label: 'Minimal — Work Sans',
-		heading: { family: 'Work Sans', stack: "'Work Sans', system-ui, -apple-system, sans-serif" },
-		body: { family: 'Work Sans', stack: "'Work Sans', system-ui, -apple-system, sans-serif" },
-		display: { family: 'Work Sans', stack: "'Work Sans', system-ui, -apple-system, sans-serif" },
-		webFontUrl: 'https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap',
-	},
-};
+import { FONT_PRESETS, type FontPreset } from '@churchkit/config/font-presets';
 
 export function resolveFontPreset(id: string | undefined): FontPreset {
 	return (id && FONT_PRESETS[id]) || FONT_PRESETS.classic;

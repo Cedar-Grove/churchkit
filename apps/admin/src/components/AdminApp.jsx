@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { listFontPresets } from "@churchkit/config/font-presets";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 // No default. A guessed API base would point one church's admin panel at
@@ -1959,14 +1960,10 @@ function rowsToServiceTimes(rows) {
   return out;
 }
 
-// Keep in sync with apps/web/src/lib/theme.ts's FONT_PRESETS — this only
-// needs id + label for the picker below, web needs the full CSS values.
-const FONT_PAIRINGS = [
-  ["classic", "Classic — Cormorant Garamond + Roboto"],
-  ["modern", "Modern — Playfair Display + Inter"],
-  ["warm", "Warm — Lora + Nunito Sans"],
-  ["minimal", "Minimal — Work Sans"],
-];
+// [id, label] pairs for the picker below, from @churchkit/config's
+// FONT_PRESETS — the same list apps/web renders from, so this can't offer a
+// font the site doesn't know how to render.
+const FONT_PAIRINGS = listFontPresets();
 
 function SettingsPage({ toast, caps }) {
   const [settings, setSettings] = useState({});
