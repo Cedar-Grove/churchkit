@@ -109,6 +109,10 @@ export async function provision({ slug, flags }) {
 	const webResult = writeConfig(resolve(appDir('web'), 'wrangler.jsonc'), webConfig, { force, dryRun });
 	if (webResult.reason === 'exists') console.log('   apps/web/wrangler.jsonc exists — left alone (--force to overwrite)');
 
+	const adminConfig = renderTemplate(resolve(appDir('admin'), 'wrangler.jsonc.example'), { SLUG: slug });
+	const adminResult = writeConfig(resolve(appDir('admin'), 'wrangler.jsonc'), adminConfig, { force, dryRun });
+	if (adminResult.reason === 'exists') console.log('   apps/admin/wrangler.jsonc exists — left alone (--force to overwrite)');
+
 	// ── 5. Schema and seed ───────────────────────────────────────
 	// Delegated to `seed`, which applies the schema and then this church's
 	// identity from brand.json. Identity always; the fictional starter pages

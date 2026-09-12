@@ -1,7 +1,12 @@
 /**
- * ChurchKit admin panel — Wrangler Pages configuration template.
+ * ChurchKit admin panel — Wrangler configuration template.
  * Copy to wrangler.jsonc and fill in the bracketed values, or let
  * `churchkit provision` render it for you.
+ *
+ * A Worker serving static assets, not a Cloudflare Pages project: Pages has
+ * been folded into Workers, and `wrangler pages deploy` against a config
+ * this shape now fails outright ("Missing entry-point to Worker script or
+ * to assets directory") rather than falling back to the old product.
  *
  * Access control is NOT configured here: put a Cloudflare Access
  * application in front of this hostname, and set its audience tag as
@@ -11,5 +16,5 @@
 {
 	"name": "<SLUG>-admin",
 	"compatibility_date": "2026-05-01",
-	"pages_build_output_dir": "dist"
+	"assets": { "directory": "./dist" }
 }
