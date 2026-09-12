@@ -60,13 +60,55 @@ const serviceDays: [string, string[]][] = Object.entries(serviceTimes)
 // Times are rendered in the church's own timezone and locale, not the
 // server's. See lib/format.ts.
 const formats = formatsFrom(settings);
+
+/**
+ * Every piece of homepage copy that isn't already church-specific data
+ * (name, tagline, service times, ...) — headings, button labels, the
+ * Vision/pillars prose. All of it is editable from admin's Homepage tab;
+ * these are just the defaults a fresh deployment renders until a church
+ * writes its own.
+ */
+const text = {
+  liveBanner: settings.home_live_banner_text || "We're live right now — click here to watch the live stream",
+  heroCtaPrimary: settings.home_hero_cta_primary || 'Plan Your Visit',
+  heroCtaSecondary: settings.home_hero_cta_secondary || 'Learn More',
+  featuredEventEyebrow: settings.home_featured_event_eyebrow || 'Featured Event',
+  featuredEventFallbackName: settings.home_featured_event_fallback_name || 'Upcoming Event',
+  featuredEventCta: settings.home_featured_event_cta || 'Register Now →',
+  sermonEyebrow: settings.home_sermon_eyebrow || 'Latest Message',
+  sermonFallbackTitle: settings.home_sermon_fallback_title || 'Sunday Service',
+  sermonCtaWatch: settings.home_sermon_cta_watch || 'Watch Now',
+  sermonCtaBrowse: settings.home_sermon_cta_browse || 'Browse All Messages',
+  visionEyebrow: settings.home_vision_eyebrow || 'Our Vision',
+  visionHeading: settings.home_vision_heading || 'Believe · Belong · Become',
+  pillar1Title: settings.home_pillar1_title || 'Believe in God',
+  pillar1Body: settings.home_pillar1_body || 'Our walk of faith starts with knowing God through Jesus, spending time in His Word, in prayer, and in worship.',
+  pillar2Title: settings.home_pillar2_title || 'Belong to Community',
+  pillar2Body: settings.home_pillar2_body || "The Christian life isn't meant to be lived alone. We gather together so we can grow together in genuine community.",
+  pillar3Title: settings.home_pillar3_title || 'Become like Jesus',
+  pillar3Body: settings.home_pillar3_body || 'We become like Jesus when we love and serve who Jesus loves: the Church, our communities, and the world.',
+  eventsEyebrow: settings.home_events_eyebrow || "What's Coming Up",
+  eventsHeading: settings.home_events_heading || 'Upcoming Events',
+  eventsCta: settings.home_events_cta || 'See All Events',
+  eventRegisterLabel: settings.home_event_register_label || 'Register →',
+  eventFreeLabel: settings.home_event_free_label || 'Free',
+  gatheringHeading: settings.home_gathering_heading || 'Gathering Times',
+  gatheringCta: settings.home_gathering_cta || 'Plan My Visit',
+  findUsHeading: settings.home_findus_heading || 'Find Us',
+  findUsCta: settings.home_findus_cta || 'Get Directions',
+  connectHeading: settings.home_connect_heading || 'Connect With Us',
+  connectBody: settings.home_connect_body || "New here? We'd love to meet you. Fill out a connect card and our team will reach out.",
+  connectCta1: settings.home_connect_cta1 || 'Fill Out a Connect Card',
+  connectCta2: settings.home_connect_cta2 || "I'm New Here",
+  connectCta3: settings.home_connect_cta3 || 'Share a Prayer Request',
+};
 ---
 
 <Layout>
   {liveStream?.isLive && (
     <a href={liveStream.url} target="_blank" rel="noopener" class="live-banner">
       <svg width="9" height="9" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="currentColor"/></svg>
-      We're live right now — click here to watch the live stream
+      {text.liveBanner}
     </a>
   )}
   <Nav />
@@ -118,8 +160,8 @@ const formats = formatsFrom(settings);
             <h1 class="hero__title">{settings.church_name ?? ''}</h1>
             {settings.tagline && <p class="hero__body">{settings.tagline}</p>}
             <div class="hero__actions">
-              <a href="/im-new" class="btn btn--accent">Plan Your Visit</a>
-              <a href="/about" class="btn btn--outline-white">Learn More</a>
+              <a href="/im-new" class="btn btn--accent">{text.heroCtaPrimary}</a>
+              <a href="/about" class="btn btn--outline-white">{text.heroCtaSecondary}</a>
             </div>
           </div>
         </div>
@@ -136,14 +178,14 @@ const formats = formatsFrom(settings);
     <div class="featured-strip">
       <div class="container featured-strip__inner">
         <div class="featured-strip__left">
-          <div class="featured-strip__label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2l2.55 5.4 5.7.82-4.13 4.15.98 5.93L12 16.7l-5.1 2.8.97-5.93L3.75 9.42l5.7-.82L12 3.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Featured Event</div>
-          <div class="featured-strip__title">{featuredEvent.name || 'Upcoming Event'}</div>
+          <div class="featured-strip__label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2l2.55 5.4 5.7.82-4.13 4.15.98 5.93L12 16.7l-5.1 2.8.97-5.93L3.75 9.42l5.7-.82L12 3.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {text.featuredEventEyebrow}</div>
+          <div class="featured-strip__title">{featuredEvent.name || text.featuredEventFallbackName}</div>
           {featuredEvent.starts_at && (
             <div class="featured-strip__meta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.4h16v15H4zM4 10h16M8.6 2.8v4.6M15.4 2.8v4.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {shortDate(featuredEvent.starts_at)}</div>
           )}
         </div>
         {featuredEvent.source === 'registrations' && (
-          <a href={featuredEvent.registration_url} class="btn btn--white">Register Now →</a>
+          <a href={featuredEvent.registration_url} class="btn btn--white">{text.featuredEventCta}</a>
         )}
       </div>
     </div>
@@ -154,13 +196,13 @@ const formats = formatsFrom(settings);
       <div class="container">
         <div class="latest-sermon__inner">
           <div class="latest-sermon__text">
-            <p class="section__eyebrow">Latest Message</p>
-            <h2 class="section__heading">{latestSermonWithVideo.title || 'Sunday Service'}</h2>
+            <p class="section__eyebrow">{text.sermonEyebrow}</p>
+            <h2 class="section__heading">{latestSermonWithVideo.title || text.sermonFallbackTitle}</h2>
             {latestSermonWithVideo.series_title && <p class="latest-sermon__series">{latestSermonWithVideo.series_title}</p>}
             <p class="latest-sermon__date">{shortDate(latestSermonWithVideo.date)}</p>
             <div class="latest-sermon__actions">
-              <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="btn btn--primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> Watch Now</a>
-              <a href="/media" class="btn btn--outline">Browse All Messages</a>
+              <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="btn btn--primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> {text.sermonCtaWatch}</a>
+              <a href="/media" class="btn btn--outline">{text.sermonCtaBrowse}</a>
             </div>
           </div>
           <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="latest-sermon__thumb">
@@ -178,24 +220,24 @@ const formats = formatsFrom(settings);
   <section class="section pillars">
     <div class="container">
       <div class="pillars__header">
-        <p class="section__eyebrow">Our Vision</p>
-        <h2 class="section__heading">Believe · Belong · Become</h2>
+        <p class="section__eyebrow">{text.visionEyebrow}</p>
+        <h2 class="section__heading">{text.visionHeading}</h2>
       </div>
       <div class="pillars__grid">
         <a href="/about" class="pillar">
           <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M7.5 8.2h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">Believe in God</h3>
-          <p class="pillar__body">Our walk of faith starts with knowing God through Jesus, spending time in His Word, in prayer, and in worship.</p>
+          <h3 class="pillar__title">{text.pillar1Title}</h3>
+          <p class="pillar__body">{text.pillar1Body}</p>
         </a>
         <a href="/about" class="pillar">
           <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 11.5a3.1 3.1 0 100-6.2 3.1 3.1 0 000 6.2zM3.4 19.2c0-3.1 2.5-5.3 5.6-5.3s5.6 2.2 5.6 5.3M15.8 6.1a3.1 3.1 0 010 5.9M17.1 14.4c2.1.6 3.5 2.4 3.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">Belong to Community</h3>
-          <p class="pillar__body">The Christian life isn't meant to be lived alone. We gather together so we can grow together in genuine community.</p>
+          <h3 class="pillar__title">{text.pillar2Title}</h3>
+          <p class="pillar__body">{text.pillar2Body}</p>
         </a>
         <a href="/about" class="pillar">
           <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20.6a8.6 8.6 0 100-17.2 8.6 8.6 0 000 17.2zM3.4 12h17.2M12 3.4c2.2 2.4 3.4 5.4 3.4 8.6s-1.2 6.2-3.4 8.6c-2.2-2.4-3.4-5.4-3.4-8.6S9.8 5.8 12 3.4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">Become like Jesus</h3>
-          <p class="pillar__body">We become like Jesus when we love and serve who Jesus loves: the Church, our communities, and the world.</p>
+          <h3 class="pillar__title">{text.pillar3Title}</h3>
+          <p class="pillar__body">{text.pillar3Body}</p>
         </a>
       </div>
     </div>
@@ -206,10 +248,10 @@ const formats = formatsFrom(settings);
       <div class="container">
         <div class="events-preview__header">
           <div>
-            <p class="section__eyebrow">What's Coming Up</p>
-            <h2 class="section__heading">Upcoming Events</h2>
+            <p class="section__eyebrow">{text.eventsEyebrow}</p>
+            <h2 class="section__heading">{text.eventsHeading}</h2>
           </div>
-          <a href="/events" class="btn btn--outline">See All Events</a>
+          <a href="/events" class="btn btn--outline">{text.eventsCta}</a>
         </div>
         <div class="events-preview__grid">
           {upcomingEvents.map((event: any) => {
@@ -229,9 +271,9 @@ const formats = formatsFrom(settings);
                   })()}
                 </div>
                 {event.source === 'registrations' ? (
-                  <a href={event.registration_url} class="event-card__btn">Register →</a>
+                  <a href={event.registration_url} class="event-card__btn">{text.eventRegisterLabel}</a>
                 ) : (
-                  <span class="event-card__btn event-card__btn--muted">Free</span>
+                  <span class="event-card__btn event-card__btn--muted">{text.eventFreeLabel}</span>
                 )}
               </div>
             );
@@ -245,7 +287,7 @@ const formats = formatsFrom(settings);
     <div class="container">
       <div class="info-strip__grid">
         <div class="info-block" hidden={serviceDays.length === 0}>
-          <h3 class="info-block__title">Gathering Times</h3>
+          <h3 class="info-block__title">{text.gatheringHeading}</h3>
           {/*
             Rendered over whatever days this church actually meets. Naming
             Sunday and Wednesday in markup assumed one schedule and left a
@@ -259,11 +301,11 @@ const formats = formatsFrom(settings);
             </div>
           ))}
           <div class="info-block__actions">
-            <a href="/im-new" class="btn btn--primary">Plan My Visit</a>
+            <a href="/im-new" class="btn btn--primary">{text.gatheringCta}</a>
           </div>
         </div>
         <div class="info-block">
-          <h3 class="info-block__title">Find Us</h3>
+          <h3 class="info-block__title">{text.findUsHeading}</h3>
           <div class="info-block__address">
             {settings.address && <p>{settings.address}</p>}
             {settings.phone && <p style="margin-top: 12px;">{settings.phone}</p>}
@@ -271,17 +313,17 @@ const formats = formatsFrom(settings);
           </div>
           <div class="info-block__actions">
             {settings.address && (
-              <a href={`https://maps.google.com/?q=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener" class="btn btn--outline">Get Directions</a>
+              <a href={`https://maps.google.com/?q=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener" class="btn btn--outline">{text.findUsCta}</a>
             )}
           </div>
         </div>
         <div class="info-block">
-          <h3 class="info-block__title">Connect With Us</h3>
-          <p class="info-block__connect-body">New here? We'd love to meet you. Fill out a connect card and our team will reach out.</p>
+          <h3 class="info-block__title">{text.connectHeading}</h3>
+          <p class="info-block__connect-body">{text.connectBody}</p>
           <div class="info-block__actions">
-            <a href="/connect-card" class="btn btn--primary">Fill Out a Connect Card</a>
-            <a href="/im-new" class="btn btn--outline">I'm New Here</a>
-            <a href="/prayer-request" class="btn btn--outline">Share a Prayer Request</a>
+            <a href="/connect-card" class="btn btn--primary">{text.connectCta1}</a>
+            <a href="/im-new" class="btn btn--outline">{text.connectCta2}</a>
+            <a href="/prayer-request" class="btn btn--outline">{text.connectCta3}</a>
           </div>
         </div>
       </div>

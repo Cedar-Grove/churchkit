@@ -160,9 +160,9 @@ function Modal({ title, onClose, children, wide }) {
 }
 
 // ─── Form helpers ─────────────────────────────────────────────────────────────
-function Field({ label, children, required }) {
+function Field({ label, children, required, style }) {
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 16, ...style }}>
       <label style={{ display: "block", fontFamily: "DM Sans, sans-serif", fontSize: 13, fontWeight: 600, color: "#444", marginBottom: 6 }}>
         {label}{required && <span style={{ color: "#c0392b" }}> *</span>}
       </label>
@@ -572,6 +572,60 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
 // ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Homepage
 // ════════════════════════════════════════════════════════════════════════════════
+// Every piece of homepage copy that isn't already church-specific data
+// (name, tagline, service times, ...) — keep in sync with the `text`
+// object in apps/web/src/pages/index.astro, which has these same keys and
+// defaults. Left blank here, the site renders the default shown as a
+// placeholder.
+const HOME_TEXT_GROUPS = [
+  { title: "Hero & Live Banner", fields: [
+    ["Live Stream Banner", "home_live_banner_text", "We're live right now — click here to watch the live stream"],
+    ["Hero Primary Button", "home_hero_cta_primary", "Plan Your Visit"],
+    ["Hero Secondary Button", "home_hero_cta_secondary", "Learn More"],
+  ]},
+  { title: "Featured Event Strip", fields: [
+    ["Eyebrow Label", "home_featured_event_eyebrow", "Featured Event"],
+    ["Fallback Event Name", "home_featured_event_fallback_name", "Upcoming Event"],
+    ["Register Button", "home_featured_event_cta", "Register Now →"],
+  ]},
+  { title: "Latest Sermon", fields: [
+    ["Eyebrow Label", "home_sermon_eyebrow", "Latest Message"],
+    ["Fallback Title", "home_sermon_fallback_title", "Sunday Service"],
+    ["Watch Button", "home_sermon_cta_watch", "Watch Now"],
+    ["Browse Button", "home_sermon_cta_browse", "Browse All Messages"],
+  ]},
+  { title: "Our Vision", fields: [
+    ["Eyebrow Label", "home_vision_eyebrow", "Our Vision"],
+    ["Heading", "home_vision_heading", "Believe · Belong · Become"],
+    ["Pillar 1 Title", "home_pillar1_title", "Believe in God"],
+    ["Pillar 1 Body", "home_pillar1_body", "Our walk of faith starts with knowing God through Jesus, spending time in His Word, in prayer, and in worship.", true],
+    ["Pillar 2 Title", "home_pillar2_title", "Belong to Community"],
+    ["Pillar 2 Body", "home_pillar2_body", "The Christian life isn't meant to be lived alone. We gather together so we can grow together in genuine community.", true],
+    ["Pillar 3 Title", "home_pillar3_title", "Become like Jesus"],
+    ["Pillar 3 Body", "home_pillar3_body", "We become like Jesus when we love and serve who Jesus loves: the Church, our communities, and the world.", true],
+  ]},
+  { title: "Upcoming Events", fields: [
+    ["Eyebrow Label", "home_events_eyebrow", "What's Coming Up"],
+    ["Heading", "home_events_heading", "Upcoming Events"],
+    ["See All Button", "home_events_cta", "See All Events"],
+    ["Register Label", "home_event_register_label", "Register →"],
+    ["Free Label", "home_event_free_label", "Free"],
+  ]},
+  { title: "Gathering Times & Find Us", fields: [
+    ["Gathering Times Heading", "home_gathering_heading", "Gathering Times"],
+    ["Gathering CTA", "home_gathering_cta", "Plan My Visit"],
+    ["Find Us Heading", "home_findus_heading", "Find Us"],
+    ["Get Directions Button", "home_findus_cta", "Get Directions"],
+  ]},
+  { title: "Connect With Us", fields: [
+    ["Heading", "home_connect_heading", "Connect With Us"],
+    ["Body", "home_connect_body", "New here? We'd love to meet you. Fill out a connect card and our team will reach out.", true],
+    ["Button 1", "home_connect_cta1", "Fill Out a Connect Card"],
+    ["Button 2", "home_connect_cta2", "I'm New Here"],
+    ["Button 3", "home_connect_cta3", "Share a Prayer Request"],
+  ]},
+];
+
 function HomepagePage({ toast }) {
   const [slides, setSlides] = useState([]);
   const [events, setEvents] = useState([]);
@@ -582,6 +636,8 @@ function HomepagePage({ toast }) {
   const [form, setForm] = useState({});
   const [imgPreview, setImgPreview] = useState(null);
   const [featuredId, setFeaturedId] = useState(null);
+  const [homeText, setHomeText] = useState({});
+  const [savingText, setSavingText] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -592,8 +648,25 @@ function HomepagePage({ toast }) {
       setSlides(Array.isArray(c?.data) ? c.data : []);
       setEvents(Array.isArray(e?.data) ? e.data : []);
       setFeaturedId(s?.data?.featured_event_id || null);
+      setHomeText(s?.data || {});
     }).finally(() => setLoading(false));
   }, []);
+
+  const setText = (key, val) => setHomeText(t => ({ ...t, [key]: val }));
+
+  async function saveHomeText() {
+    setSavingText(true);
+    try {
+      const payload = Object.fromEntries(HOME_TEXT_GROUPS.flatMap(g => g.fields).map(([, key]) => [key, homeText[key] || ""]));
+      const res = await api("/api/admin/settings", { method: "POST", body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error("Save failed");
+      toast("Homepage text saved");
+    } catch {
+      toast("Save failed", "error");
+    } finally {
+      setSavingText(false);
+    }
+  }
 
   function openEdit(slide) {
     setForm(slide || { headline: "", subtext: "", button_label: "", button_link: "", image_url: "" });
@@ -701,6 +774,34 @@ function HomepagePage({ toast }) {
               {featuredId === ev.id && <div style={{ fontSize: 12, color: "#2d4a2b", fontWeight: 600, marginTop: 4 }}>★ Currently Featured</div>}
             </div>
           ))}
+        </div>
+      </div>
+
+      {/*
+        Everything on the homepage that isn't already church data (name,
+        address, service times) but still isn't code — labels, button
+        text, the Vision/pillars prose. Blank means "use the default shown
+        as a placeholder," so a church that never opens this still gets a
+        working homepage.
+      */}
+      <div style={{ marginTop: 32 }}>
+        <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "#2d4a2b", margin: "0 0 16px" }}>Homepage Text</h2>
+        {HOME_TEXT_GROUPS.map(group => (
+          <div key={group.title} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 24, marginBottom: 16 }}>
+            <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 15, color: "#2d4a2b", margin: "0 0 16px", paddingBottom: 10, borderBottom: "1px solid #f0ece4" }}>{group.title}</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {group.fields.map(([label, key, fallback, multiline]) => (
+                <Field key={key} label={label} style={multiline ? { gridColumn: "span 2" } : undefined}>
+                  {multiline
+                    ? <textarea style={{ ...inputStyle, minHeight: 70 }} value={homeText[key] || ""} onChange={e => setText(key, e.target.value)} placeholder={fallback} />
+                    : <input style={inputStyle} value={homeText[key] || ""} onChange={e => setText(key, e.target.value)} placeholder={fallback} />}
+                </Field>
+              ))}
+            </div>
+          </div>
+        ))}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={saveHomeText} style={btnPrimary} disabled={savingText}>{savingText ? "Saving…" : "Save Homepage Text"}</button>
         </div>
       </div>
 
