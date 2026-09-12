@@ -102,6 +102,11 @@ export function resolveAdminAuth(
 ): AdminAuth {
 	switch (mode) {
 		case 'cloudflare-access':
+			// An Access application that was never created leaves nothing to
+			// verify against. Reported as unconfigured rather than as a
+			// failed check, so the response names the secret to set instead
+			// of just saying no.
+			if (!env.CF_ACCESS_AUD?.trim()) return noAuth('CF_ACCESS_AUD is not set');
 			return cloudflareAccessAuth(env);
 		case 'proxy-header':
 			return proxyHeaderAuth(env);

@@ -100,12 +100,16 @@ export function err(message: string, status = 400): Response {
  * `capability` to know what to hide, and a human reading the response gets
  * told which secret to set.
  */
-export function notConfigured(capability: keyof Capabilities): Response {
+export function notConfigured(capability: keyof Capabilities, remedy?: string): Response {
 	return new Response(
 		JSON.stringify({
 			error: `This deployment has no ${capability} configured.`,
 			capability,
-			remedy: CAPABILITY_REQUIREMENTS[capability],
+			// A host-specific remedy where the caller knows one — the fix for
+			// a missing admin differs between Cloudflare and a self-hosted
+			// deployment, and naming the wrong setting wastes someone's
+			// afternoon.
+			remedy: remedy ?? CAPABILITY_REQUIREMENTS[capability],
 		}),
 		{ status: 501, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
 	);

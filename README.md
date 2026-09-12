@@ -27,6 +27,12 @@ Data lives in Cloudflare D1 and R2. Everything a church actually cares
 about — people, giving, groups, services, check-ins — stays in Planning
 Center, where it belongs.
 
+**Cloudflare is the default, not a requirement.** The same code runs on an
+ordinary Node server with SQLite and the local filesystem — see
+[docs/self-hosting-node.md](docs/self-hosting-node.md), which is honest
+about what you take on in exchange (TLS, caching, backups, and
+authenticating your own admins).
+
 ## Make it yours
 
 Church-specific configuration lives in exactly three places, never in code:

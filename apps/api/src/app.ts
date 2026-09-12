@@ -173,17 +173,20 @@ async function route(path: string, method: string, request: Request, env: Env, o
 		const local = isLocalDevRequest(request, env);
 
 		// With no way to verify an admin, the panel is unavailable rather
-		// than unprotected.
-		if (!local && !caps.admin && !env.ADMIN_AUTH) return notConfigured('admin');
+		// than unprotected — and says which setting is missing, rather than
+		// returning a bare rejection the reader has to go and diagnose.
+		const adminAuth = env.ADMIN_AUTH;
+		if (!local && (!adminAuth || adminAuth.name === 'none')) {
+			const reason = await adminAuth?.verify(request);
+			return notConfigured('admin', reason?.reason
+				? `${reason.reason}. On Cloudflare set CF_ACCESS_AUD; self-hosted, set ADMIN_AUTH_MODE.`
+				: undefined);
+		}
 
 		// Authentication comes from the host adapter — Cloudflare Access on
 		// Workers, whatever a self-hosted deployment configured otherwise.
 		// See platform/adminAuth.ts.
-		const auth = local
-			? { ok: true as const }
-			: env.ADMIN_AUTH
-				? await env.ADMIN_AUTH.verify(request)
-				: { ok: false as const, reason: 'no admin authentication configured' };
+		const auth = local ? { ok: true as const } : await adminAuth!.verify(request);
 		if (!auth.ok) {
 			return new Response(JSON.stringify({ error: `Unauthorized: ${auth.reason}` }), {
 				status: 401,
