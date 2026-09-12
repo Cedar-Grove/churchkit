@@ -179,9 +179,24 @@ async function secretsWizard({ slug, file, dryRun }) {
 				if (answer === '-') values[s.name] = '';
 				else if (answer !== '') values[s.name] = answer;
 				// blank answer: leave `current` (or the absence of one) as-is
+
+				// After every field, not just at the end: a Ctrl+C mid-group
+				// used to lose everything typed in the entire session, which
+				// is exactly the failure mode this file exists to prevent.
+				writeFileSync(file, renderSecretsFile(values));
 			}
 			console.log('');
 		}
+	} catch (e) {
+		// readline/promises rejects the pending question() on Ctrl+C rather
+		// than throwing a recognisable AbortError type, so this catches
+		// anything rather than matching a specific class. Whatever was
+		// answered before the interruption is already on disk (see above) —
+		// this just says so, instead of the generic top-level "✗ <message>"
+		// cli.mjs would otherwise print for an error with nothing to add.
+		console.log(`\n\nInterrupted. Everything answered so far is saved to ${file}.`);
+		console.log(`Resume any time: churchkit secrets ${slug} --wizard`);
+		return 1;
 	} finally {
 		rl.close();
 	}
