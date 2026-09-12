@@ -297,6 +297,23 @@ export async function handleAdmin(
 		return json({ success: true, result });
 	}
 
+	// Sends to exactly one already-registered device, never touching real
+	// subscribers — for confirming push actually reaches a phone (a fresh
+	// local build, say) without paging everyone who has the app installed.
+	// Not written to push_notifications: that history is for what a church
+	// actually told its people, not for a developer's own test pings.
+	if (path === '/api/admin/notifications/test' && method === 'POST') {
+		const { player_id } = await request.json() as any;
+		if (!player_id) return err('player_id is required');
+		const result = await sendPush(env, {
+			title: 'Test Notification',
+			body: 'This is a test push from the admin panel — sent to this device only.',
+			playerIds: [player_id],
+		});
+		if (!result) return err('Push is not configured, or OneSignal rejected the request', 502);
+		return json({ success: true, result });
+	}
+
 	// ── Device Stats ───────────────────────────────────────────
 	if (path === '/api/admin/device-stats' && method === 'GET') {
 		await ensureDeviceTokensColumns(env);

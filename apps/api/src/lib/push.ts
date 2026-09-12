@@ -5,6 +5,7 @@ interface PushOptions {
 	body: string;
 	segment?: string;
 	externalIds?: string[];
+	playerIds?: string[];
 	sendAfter?: string;
 }
 
@@ -29,7 +30,12 @@ export async function sendPush(env: Env, opts: PushOptions): Promise<any | null>
 	// other than that.
 	if (opts.sendAfter) payload.send_after = opts.sendAfter;
 
-	if (opts.externalIds?.length) {
+	// Checked in this order because it's the order of "how narrowly is this
+	// aimed": a specific device (testing on one phone without notifying real
+	// subscribers) beats a specific person, which beats a segment.
+	if (opts.playerIds?.length) {
+		payload.include_player_ids = opts.playerIds;
+	} else if (opts.externalIds?.length) {
 		payload.include_external_user_ids = opts.externalIds;
 	} else {
 		payload.included_segments = [opts.segment || 'All'];

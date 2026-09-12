@@ -1710,6 +1710,37 @@ function SubmissionsPage({ toast }) {
   );
 }
 
+/** Pings exactly this one device — for confirming push actually reaches a
+ * phone (a fresh local build, say) without notifying every real subscriber. */
+function SendTestButton({ playerId, toast }) {
+  const [sending, setSending] = useState(false);
+  async function send() {
+    setSending(true);
+    try {
+      const r = await api("/api/admin/notifications/test", {
+        method: "POST",
+        body: JSON.stringify({ player_id: playerId }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || "Send failed");
+      toast("Test notification sent");
+    } catch (e) { toast(e.message || "Send failed", "error"); } finally { setSending(false); }
+  }
+  return (
+    <button
+      onClick={send}
+      disabled={sending}
+      style={{
+        padding: "5px 12px", borderRadius: 6, border: "1px solid #d8d2c4",
+        background: "#fff", color: "#2d4a2b", fontFamily: "DM Sans, sans-serif",
+        fontSize: 12, fontWeight: 600, cursor: sending ? "default" : "pointer",
+        opacity: sending ? 0.6 : 1,
+      }}
+    >
+      {sending ? "Sending…" : "Send Test"}
+    </button>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Mobile App
 // ════════════════════════════════════════════════════════════════════════════════
@@ -1806,7 +1837,7 @@ function MobileAppPage({ toast, settings }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f7f5f0" }}>
-                {["Player ID", "Platform", "App Version", "PCO Person", "Last Seen"].map(h => (
+                {["Player ID", "Platform", "App Version", "PCO Person", "Last Seen", ""].map(h => (
                   <th key={h} style={{ padding: "12px 20px", textAlign: "left", fontFamily: "DM Sans, sans-serif", fontSize: 12, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5 }}>{h}</th>
                 ))}
               </tr>
@@ -1827,6 +1858,9 @@ function MobileAppPage({ toast, settings }) {
                   <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{d.app_version || "—"}</td>
                   <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{d.pco_person_id || "—"}</td>
                   <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{fmtDate(d.last_seen_at)}</td>
+                  <td style={{ padding: "12px 20px" }}>
+                    <SendTestButton playerId={d.onesignal_player_id} toast={toast} />
+                  </td>
                 </tr>
               ))}
             </tbody>
