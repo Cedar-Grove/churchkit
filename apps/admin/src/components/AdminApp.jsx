@@ -208,7 +208,8 @@ const NAV = [
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
-function Sidebar({ page, setPage, unread, user, onSignOut, churchName }) {
+function Sidebar({ page, setPage, unread, user, onSignOut, churchName, caps }) {
+  const nav = NAV.filter(n => n.id !== "notifications" || caps.push);
   return (
     <aside style={{
       width: 240, minHeight: "100vh", background: "#2d4a2b", display: "flex",
@@ -223,7 +224,7 @@ function Sidebar({ page, setPage, unread, user, onSignOut, churchName }) {
         </div>
       </div>
       <nav style={{ flex: 1, padding: "16px 0" }}>
-        {NAV.map(n => (
+        {nav.map(n => (
           <button key={n.id} onClick={() => setPage(n.id)} style={{
             display: "flex", alignItems: "center", gap: 12, width: "100%",
             padding: "11px 24px", border: "none", cursor: "pointer", textAlign: "left",
@@ -926,6 +927,7 @@ function PagesPage({ toast, siteUrl }) {
     setEditing({
       slug, title: "", sub_title: "", subtext: "", html: "", image_url: "", image_focal_x: 50, image_focal_y: 50,
       gallery_image_1: "", gallery_image_2: "", gallery_image_3: "", published: true,
+      is_ministry: false, sort_order: 0,
     });
     setImgPreview(null);
     setEditorLoading(true);
@@ -939,6 +941,7 @@ function PagesPage({ toast, siteUrl }) {
         image_focal_x: page.image_focal_x ?? 50, image_focal_y: page.image_focal_y ?? 50,
         gallery_image_1: page.gallery_image_1 || "", gallery_image_2: page.gallery_image_2 || "", gallery_image_3: page.gallery_image_3 || "",
         published: (page.status || "published") !== "draft",
+        is_ministry: !!page.is_ministry, sort_order: page.sort_order ?? 0,
       });
       setImgPreview(page.image_url || null);
     } catch { /* keep defaults */ } finally { setEditorLoading(false); }
@@ -1812,7 +1815,7 @@ function rowsToServiceTimes(rows) {
   return out;
 }
 
-function SettingsPage({ toast }) {
+function SettingsPage({ toast, caps }) {
   const [settings, setSettings] = useState({});
   const [serviceRows, setServiceRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1935,39 +1938,43 @@ function SettingsPage({ toast }) {
         </Field>
       </SettingsSection>
 
-      <SettingsSection title="Visitor Welcome Email">
-        <Field label="Message" style={{ gridColumn: "span 2" }}>
-          <textarea
-            style={{ ...inputStyle, minHeight: 180, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13 }}
-            value={settings.welcome_email_html || ""}
-            onChange={e => set("welcome_email_html", e.target.value)}
-            placeholder="Leave empty to use the built-in default."
-          />
-          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#888", marginTop: 6 }}>
-            Sent to anyone who submits a connect card. HTML is allowed. Use{" "}
-            <code>{"{{first_name}}"}</code>, <code>{"{{church_name}}"}</code>,{" "}
-            <code>{"{{address}}"}</code>, <code>{"{{phone}}"}</code> and{" "}
-            <code>{"{{email}}"}</code> as placeholders.
-          </div>
-        </Field>
-      </SettingsSection>
+      {caps.email && (
+        <SettingsSection title="Visitor Welcome Email">
+          <Field label="Message" style={{ gridColumn: "span 2" }}>
+            <textarea
+              style={{ ...inputStyle, minHeight: 180, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13 }}
+              value={settings.welcome_email_html || ""}
+              onChange={e => set("welcome_email_html", e.target.value)}
+              placeholder="Leave empty to use the built-in default."
+            />
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#888", marginTop: 6 }}>
+              Sent to anyone who submits a connect card. HTML is allowed. Use{" "}
+              <code>{"{{first_name}}"}</code>, <code>{"{{church_name}}"}</code>,{" "}
+              <code>{"{{address}}"}</code>, <code>{"{{phone}}"}</code> and{" "}
+              <code>{"{{email}}"}</code> as placeholders.
+            </div>
+          </Field>
+        </SettingsSection>
+      )}
 
-      <SettingsSection title="Bulletin & Newsletter">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <PdfUploadField
-            label="Weekly Bulletin (PDF)"
-            value={settings.bulletin_pdf_url}
-            onChange={url => set("bulletin_pdf_url", url)}
-            toast={toast}
-          />
-          <PdfUploadField
-            label="Newsletter (PDF)"
-            value={settings.newsletter_pdf_url}
-            onChange={url => set("newsletter_pdf_url", url)}
-            toast={toast}
-          />
-        </div>
-      </SettingsSection>
+      {caps.mediaUploads && (
+        <SettingsSection title="Bulletin & Newsletter">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <PdfUploadField
+              label="Weekly Bulletin (PDF)"
+              value={settings.bulletin_pdf_url}
+              onChange={url => set("bulletin_pdf_url", url)}
+              toast={toast}
+            />
+            <PdfUploadField
+              label="Newsletter (PDF)"
+              value={settings.newsletter_pdf_url}
+              onChange={url => set("newsletter_pdf_url", url)}
+              toast={toast}
+            />
+          </div>
+        </SettingsSection>
+      )}
 
       <SettingsSection title="Form Routing">
         {[["Connect Card Email", "connect_email"], ["I'm New Email", "imnew_email"], ["Contact Form Email", "contact_email"]].map(([l, k]) => (
@@ -2016,6 +2023,16 @@ export default function App() {
   const churchName = settings.church_name || "";
   const siteUrl = settings.site_url || "";
 
+  // What this deployment can actually do, so the panel doesn't offer
+  // settings for integrations that have no credentials behind them.
+  const [caps, setCaps] = useState({});
+  useEffect(() => {
+    api("/api/capabilities")
+      .then(r => r.json())
+      .then(d => setCaps(d?.data || {}))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     fetch("/cdn-cgi/access/get-identity", { credentials: "include" })
       .then(r => r.ok ? r.json() : null)
@@ -2035,14 +2052,21 @@ export default function App() {
     settings: "Settings",
   };
 
+  // A page reached only by its sidebar button disappears along with that
+  // button — send the panel somewhere real rather than rendering a page for
+  // a capability that just went away (or was never there this session).
+  useEffect(() => {
+    if (page === "notifications" && !caps.push) setPage("homepage");
+  }, [page, caps.push]);
+
   const renderPage = () => {
-    const props = { toast, setPage, settings, siteUrl, churchName };
+    const props = { toast, setPage, settings, siteUrl, churchName, caps };
     switch (page) {
       case "homepage": return <HomepagePage {...props} />;
       case "staff": return <StaffPage {...props} />;
       case "pages": return <PagesPage {...props} />;
       case "sermon-notes": return <SermonNotesPage {...props} />;
-      case "notifications": return <NotificationsPage {...props} />;
+      case "notifications": return caps.push ? <NotificationsPage {...props} /> : <HomepagePage {...props} />;
       case "submissions": return <SubmissionsPage {...props} />;
       case "mobile": return <MobileAppPage {...props} />;
       case "settings": return <SettingsPage {...props} />;
@@ -2067,7 +2091,7 @@ export default function App() {
         [contenteditable] p { margin: 6px 0; }
       `}</style>
       <div style={{ display: "flex", minHeight: "100vh" }}>
-        <Sidebar page={page} setPage={setPage} unread={unread} user={user} onSignOut={handleSignOut} churchName={churchName} />
+        <Sidebar page={page} setPage={setPage} unread={unread} user={user} onSignOut={handleSignOut} churchName={churchName} caps={caps} />
         <div style={{ marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>
           <TopBar title={PAGE_TITLES[page]} />
           <main style={{ flex: 1, background: "#faf8f3" }}>
