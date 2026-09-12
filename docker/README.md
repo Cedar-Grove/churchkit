@@ -70,14 +70,21 @@ through it, and only then deploy.
 
 1. **Identity** comes from `brand.json`, applied automatically each time
    `churchkit dev` starts. Edit the file, re-run, and the site updates.
-2. **Content** — pages, staff, ministries, carousel — you add in the admin
-   panel at http://localhost:4322, exactly as you would in production. It
+2. **Everything else** you do in the admin panel at
+   http://localhost:4322, exactly as you would in production: pages, staff,
+   ministries and the carousel, and under Branding the primary colour,
+   accent, font pairing and logos, and the homepage's own wording. It
    persists in `.wrangler/state` across restarts, and re-running `dev` does
    not overwrite it.
-3. `--example` loads the fictional starter pages and a carousel slide, so a
+3. `--example` loads the fictional starter pages, carousel and staff, so a
    brand-new deployment looks like a website rather than an empty shell.
    Skip it if you would rather start from nothing.
 4. `--no-seed` skips the identity step entirely.
+
+Rehearsing in the admin panel is the point: nearly everything a church will
+want to change is changeable there, so if something can only be fixed by
+editing this repository, that is worth reporting rather than working
+around.
 
 When it looks right, `churchkit provision` and `churchkit deploy` set up the
 real thing — and `churchkit seed <slug>` applies the same identity there,

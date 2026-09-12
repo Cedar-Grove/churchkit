@@ -10,13 +10,22 @@ phone number, email, colour, font, service time, ministry list, or API
 identifier. This is what makes the project reusable, and it is violated
 easily and quietly.
 
-Church-specific values live in exactly three places:
+Church-specific values live in three places, and the first two layer:
 
 | What | Where |
 |---|---|
-| Colours, fonts, logo, name, tagline, service times, URLs | `brands/<slug>/brand.json` |
-| Pages, staff, ministries, carousel, sermon notes | that deployment's database |
+| Build-time defaults: colours, fonts, logo, name, tagline, service times, URLs | `brands/<slug>/brand.json` |
+| Everything editable without a deploy: pages, staff, ministries, carousel, sermon notes — plus colour, font and logo overrides and the homepage's own wording | that deployment's database |
 | API keys and routing addresses | Worker secrets, or environment variables |
+
+**The database wins where it has an opinion.** `brand.json` compiles
+defaults into `tokens.css`; a church that opens the admin panel's Branding
+section overrides the primary colour, accent, font pairing and logos at
+request time, and the homepage's labels, buttons and prose come from
+`home_*` settings. A deployment that never touches those renders exactly
+what `brand.json` compiled — see `apps/web/src/lib/theme.ts`, where absent
+settings deliberately mean "keep the compiled value" rather than a second
+set of defaults.
 
 ### A fallback containing content is worse than no fallback
 
@@ -57,6 +66,12 @@ routes on Node with SQLite. `app.ts` knows about neither host.
 published page at its slug. Routes with real behaviour (forms, media,
 events, giving, staff) stay as files, and `RESERVED_SLUGS` in
 `src/lib/nav.ts` stops a page shadowing one.
+
+**So is most of the homepage.** Its eyebrows, headings, button labels and
+Vision prose are `home_*` settings rather than markup, so a church rewrites
+them without a deploy. When adding anything user-visible to that page, ask
+whether a church would want different words — the answer is usually yes,
+and the setting is cheaper than the support request.
 
 ## Conventions
 

@@ -43,23 +43,30 @@ requests.
 
 ## Make it yours
 
-Church-specific configuration lives in exactly three places, never in code:
+Church-specific configuration lives in three places, never in code:
 
 | What | Where |
 |---|---|
-| Colours, fonts, logo, name, tagline, service times | `brand.json` |
-| Pages, staff, ministries, carousel content | your deployment's database |
+| Starting point: colours, fonts, logo, name, tagline, service times | `brand.json` |
+| Everything staff can change without a deploy | your deployment's database |
 | API keys and routing addresses | Worker secrets, or environment variables |
+
+Set the starting point once:
 
 ```bash
 npx churchkit new my-church          # copies the example, sets the slug
 $EDITOR brands/my-church/brand.json
-npx churchkit brand my-church        # regenerate tokens after an edit
+npx churchkit brand my-church        # regenerate tokens and logos
 ```
 
 The generator validates as it goes — including WCAG contrast on the colour
 pairings the layouts depend on, so a brand that would render illegible text
 fails the build instead of shipping.
+
+After that, most of it is editable in the admin panel: pages, staff,
+ministries, the carousel, the homepage's own wording, and the primary
+colour, accent, font pairing and logos. A church that never opens those
+settings keeps exactly what `brand.json` compiled.
 
 ## Getting started
 
