@@ -15,9 +15,10 @@ try {
 // No invented times, and no assumption about which days. A wrong service
 // time sends a visitor to a locked building, in the church's own voice.
 const serviceTimes: Record<string, string[]> = settings.service_times ?? {};
-const serviceDays: [string, string[]][] = Object.entries(serviceTimes)
+const serviceNotes: Record<string, string> = settings.service_notes ?? {};
+const serviceDays: [string, string[], string | undefined][] = Object.entries(serviceTimes)
   .filter(([, times]) => Array.isArray(times) && times.length > 0)
-  .map(([day, times]) => [day.charAt(0).toUpperCase() + day.slice(1), times as string[]]);
+  .map(([day, times]) => [day.charAt(0).toUpperCase() + day.slice(1), times as string[], serviceNotes[day]]);
 
 // "What to expect" is this church's own writing, not ours. Anything the
 // previous version asserted here — dress code, parking, service length,
@@ -45,10 +46,11 @@ try {
       <p class="section__eyebrow">When We Gather</p>
       <h2 class="section__heading" hidden={serviceDays.length === 0}>Service Times</h2>
       <div class="times-grid">
-        {serviceDays.map(([day, times]) => (
+        {serviceDays.map(([day, times, note]) => (
           <div class="time-block">
             <h3 class="time-block__day">{day}</h3>
             {times.map((t) => <div class="time-block__time">{t}</div>)}
+            {note && <p class="time-block__note">{note}</p>}
           </div>
         ))}
       </div>

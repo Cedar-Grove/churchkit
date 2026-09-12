@@ -3,6 +3,7 @@ import { getSettings, getMinistries, getCapabilities } from '../lib/api';
 import { buildNav } from '../lib/nav';
 import { env } from '../lib/env';
 import { logoDark } from '../lib/logo';
+import { primarySundayTime, cityRegion } from '../lib/service-times';
 
 const [settings, ministries, capabilities] = await Promise.all([
   getSettings(env.API_BASE).catch(() => ({})),
@@ -24,11 +25,20 @@ const logoSrc: string | null = settings.logo_dark_url || logoDark;
 const currentPath = Astro.url.pathname;
 const isActive = (href: string) =>
   href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+
+// The tagline already has a home — the footer, verbatim. This line is a
+// different fact (when and where this week's gathering is), derived from
+// service_times/city/region rather than repeating the tagline in a second
+// spot, and it disappears rather than falling back to anything invented
+// when a church hasn't set service times or an address yet.
+const worshipTime = primarySundayTime(settings.service_times);
+const location = cityRegion(settings);
+const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].filter(Boolean).join(' · ');
 ---
 
 <div class="utility">
   <div class="container utility__inner">
-    <p class="caps utility__hours">{settings.tagline ?? ''}</p>
+    {utilityLine && <p class="caps utility__hours">{utilityLine}</p>}
     {phone && <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`} class="caps utility__link">{phone}</a>}
   </div>
 </div>

@@ -47,6 +47,12 @@ export function settingsFromBrand(brand) {
 		phone: brand.contact?.phone ?? '',
 		email: brand.contact?.email ?? '',
 		address: oneLine,
+		// Separate from `address`: a few short pieces of UI (the header's
+		// worship-line, the footer's copyright) want "Leeds, AL" on its own,
+		// and parsing it back out of the one-line address is fragile — commas
+		// in a street name would break it silently.
+		city: address.city ?? '',
+		region: address.region ?? '',
 		service_times: serviceTimesJson(brand),
 		site_url: brand.urls?.web ?? '',
 		church_center_url: brand.urls?.churchCenter ?? '',

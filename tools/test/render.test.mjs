@@ -70,6 +70,14 @@ test('settingsFromBrand writes a US address with no comma before the postcode', 
 	assert.equal(settingsFromBrand(BRAND).address, '88 River Road, Ashford, OR 97001');
 });
 
+test('settingsFromBrand carries city and region as their own settings', () => {
+	// Kept separate from the one-line `address` so UI that wants just
+	// "Ashford, OR" doesn't have to parse it back out of a street address.
+	const settings = settingsFromBrand(BRAND);
+	assert.equal(settings.city, 'Ashford');
+	assert.equal(settings.region, 'OR');
+});
+
 test('settingsFromBrand carries a Saturday-only schedule through', () => {
 	// The shape the original stack could not represent at all.
 	const times = JSON.parse(settingsFromBrand(BRAND).service_times);

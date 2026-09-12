@@ -1922,16 +1922,27 @@ function SettingsSection({ title, children }) {
   );
 }
 
-/** `{ sunday: ["9:00 AM"] }` ⇄ the editable rows above. */
-function serviceTimesToRows(value) {
-  let parsed = value;
-  if (typeof parsed === "string") {
-    try { parsed = JSON.parse(parsed); } catch { parsed = {}; }
+/**
+ * `{ sunday: ["9:00 AM"] }` + `{ sunday: "Childcare is available..." }` ⇄
+ * the editable rows above. Notes are a separate setting (`service_notes`,
+ * keyed the same way as `service_times`) rather than a new shape for
+ * `service_times` itself, so a deployment that never touches this still
+ * has plain arrays of strings.
+ */
+function serviceTimesToRows(times, notes) {
+  let parsedTimes = times;
+  if (typeof parsedTimes === "string") {
+    try { parsedTimes = JSON.parse(parsedTimes); } catch { parsedTimes = {}; }
   }
-  if (!parsed || typeof parsed !== "object") return [];
-  return Object.entries(parsed).map(([day, times]) => ({
+  let parsedNotes = notes;
+  if (typeof parsedNotes === "string") {
+    try { parsedNotes = JSON.parse(parsedNotes); } catch { parsedNotes = {}; }
+  }
+  if (!parsedTimes || typeof parsedTimes !== "object") return [];
+  return Object.entries(parsedTimes).map(([day, dayTimes]) => ({
     day: day.charAt(0).toUpperCase() + day.slice(1),
-    times: Array.isArray(times) ? times.join(", ") : String(times ?? ""),
+    times: Array.isArray(dayTimes) ? dayTimes.join(", ") : String(dayTimes ?? ""),
+    note: (parsedNotes && parsedNotes[day]) || "",
   }));
 }
 
@@ -1941,6 +1952,16 @@ function rowsToServiceTimes(rows) {
     const key = day.trim().toLowerCase();
     if (!key) continue;
     out[key] = times.split(",").map(t => t.trim()).filter(Boolean);
+  }
+  return out;
+}
+
+function rowsToServiceNotes(rows) {
+  const out = {};
+  for (const { day, note } of rows) {
+    const key = day.trim().toLowerCase();
+    if (!key || !note) continue;
+    out[key] = note;
   }
   return out;
 }
@@ -1962,7 +1983,7 @@ function SettingsPage({ toast, caps }) {
       .then(d => {
         const loaded = d?.data || {};
         setSettings(loaded);
-        setServiceRows(serviceTimesToRows(loaded.service_times));
+        setServiceRows(serviceTimesToRows(loaded.service_times, loaded.service_notes));
       })
       .catch(() => setSettings({}))
       .finally(() => setLoading(false));
@@ -1992,10 +2013,11 @@ function SettingsPage({ toast, caps }) {
   const setServiceDays = rows => {
     setServiceRows(rows);
     set("service_times", rowsToServiceTimes(rows));
+    set("service_notes", rowsToServiceNotes(rows));
   };
   const updateServiceDay = (i, patch) =>
     setServiceDays(serviceRows.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
-  const addServiceDay = () => setServiceDays([...serviceRows, { day: "", times: "" }]);
+  const addServiceDay = () => setServiceDays([...serviceRows, { day: "", times: "", note: "" }]);
   const removeServiceDay = i => setServiceDays(serviceRows.filter((_, idx) => idx !== i));
 
   if (loading) return <Loading />;
@@ -2081,20 +2103,28 @@ function SettingsPage({ toast, caps }) {
       <SettingsSection title="Service Times">
         <div style={{ gridColumn: "span 2" }}>
           {serviceRows.map((row, i) => (
-            <div key={i} style={{ display: "flex", gap: 12, marginBottom: 10 }}>
+            <div key={i} style={{ marginBottom: 14 }}>
+              <div style={{ display: "flex", gap: 12, marginBottom: 6 }}>
+                <input
+                  style={{ ...inputStyle, flex: "0 0 180px" }}
+                  value={row.day}
+                  placeholder="Day (e.g. Sunday)"
+                  onChange={e => updateServiceDay(i, { day: e.target.value })}
+                />
+                <input
+                  style={{ ...inputStyle, flex: 1 }}
+                  value={row.times}
+                  placeholder="9:00 AM — Bible Study, 10:30 AM — Worship"
+                  onChange={e => updateServiceDay(i, { times: e.target.value })}
+                />
+                <button onClick={() => removeServiceDay(i)} style={{ ...btnSecondary, padding: "8px 14px" }}>Remove</button>
+              </div>
               <input
-                style={{ ...inputStyle, flex: "0 0 180px" }}
-                value={row.day}
-                placeholder="Day (e.g. Sunday)"
-                onChange={e => updateServiceDay(i, { day: e.target.value })}
+                style={{ ...inputStyle, marginLeft: 192 }}
+                value={row.note}
+                placeholder="Optional note (e.g. Childcare is available for infants through 5th grade.)"
+                onChange={e => updateServiceDay(i, { note: e.target.value })}
               />
-              <input
-                style={{ ...inputStyle, flex: 1 }}
-                value={row.times}
-                placeholder="9:00 AM — Bible Study, 10:30 AM — Worship"
-                onChange={e => updateServiceDay(i, { times: e.target.value })}
-              />
-              <button onClick={() => removeServiceDay(i)} style={{ ...btnSecondary, padding: "8px 14px" }}>Remove</button>
             </div>
           ))}
           <button onClick={addServiceDay} style={{ ...btnSecondary, marginTop: 4 }}>+ Add a day</button>

@@ -2,6 +2,7 @@
 import { getSettings, getCapabilities } from '../lib/api';
 import { env } from '../lib/env';
 import { logoWhite } from '../lib/logo';
+import { cityRegion } from '../lib/service-times';
 
 const [settings, capabilities] = await Promise.all([
   getSettings(env.API_BASE).catch(() => ({} as any)),
@@ -13,6 +14,7 @@ const address: string = settings.address ?? '';
 const phone: string = settings.phone ?? '';
 const email: string = settings.email ?? '';
 const logoSrc: string | null = settings.logo_white_url || logoWhite;
+const location = cityRegion(settings);
 
 // Only link what this church actually has. An empty social icon row or a
 // giving button that goes nowhere is worse than no row at all.
@@ -56,7 +58,7 @@ const social: [string, string][] = Object.entries(
   </div>
 
   <div class="container footer__legal">
-    <span>&copy; {new Date().getFullYear()} {churchName}</span>
+    <span>&copy; {new Date().getFullYear()} {churchName}{location && ` · ${location}`}</span>
     <span class="footer__legal-links">
       <a href="/privacy">Privacy</a>
       <a href="/terms">Terms</a>
