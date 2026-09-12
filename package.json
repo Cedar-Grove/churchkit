@@ -4,13 +4,22 @@
   "private": true,
   "description": "An open-source website, mobile app, and admin platform for churches, built on Planning Center.",
   "license": "Apache-2.0",
-  "repository": { "type": "git", "url": "https://github.com/cedar-grove/churchkit.git" },
-  "engines": { "node": ">=20" },
-  "workspaces": ["apps/*", "packages/*", "tools"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cedar-grove/churchkit.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "tools"
+  ],
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspaces --if-present",
-    "brand:build": "npm run build -w @churchkit/brand"
+    "churchkit": "node tools/src/cli.mjs"
   }
 }

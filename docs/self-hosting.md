@@ -1,40 +1,87 @@
-# Self-hosting ChurchKit
+# Deploying ChurchKit
 
-> **Not yet deployable.** The applications are still being ported into this
-> repository. This document is the outline the port is working toward; it
-> will be filled in as each app lands.
+This covers deploying to Cloudflare, which is the default and the path with
+the least to configure. To run it on your own server instead, see
+[self-hosting-node.md](self-hosting-node.md).
 
 ## What you will need
 
 Each church runs its own accounts. Nothing is shared with the project or
 between deployments.
 
-| Service | Used for | Cost |
+| Service | Used for | Required? |
 |---|---|---|
-| Cloudflare | Workers, D1, R2, Access, Turnstile | Workers Paid, ~$5/mo |
-| Planning Center | people, services, giving, check-ins, calendar | your existing plan |
-| Resend | transactional email from forms | free tier available |
-| OneSignal | push notifications | free tier available |
-| YouTube Data API | sermon video listings | free, quota-limited |
-| Bible Brain / API.Bible | scripture text and audio | free keys on request |
-| Sentry *(optional)* | error monitoring | free tier available |
-| Apple + Google developer accounts | publishing the mobile app | $99/yr + $25 once |
+| Cloudflare | Workers, D1, R2, Access, Turnstile | **yes** (Workers Paid, ~$5/mo) |
+| Planning Center | people, services, giving, check-ins, calendar | no |
+| Resend | transactional email from forms | no |
+| OneSignal | push notifications | no |
+| YouTube Data API | sermon video and live stream | no |
+| Bible Brain / API.Bible | scripture text and audio | no |
+| Sentry | error monitoring | no |
+| Apple + Google developer accounts | publishing the mobile app | only for the app |
 
-## Outline
+Only the first is required, and only because something has to run the code.
+Every other row is a feature you can leave off: `GET /api/capabilities`
+reports what a deployment can serve, and the website and app hide the rest.
+`churchkit doctor` lists each unset credential and what it switches off.
 
-1. **Brand** — copy `examples/example-church`, edit `brand.json`, run `npm run brand:build`.
-2. **Infrastructure** — create the D1 database and R2 bucket, apply migrations, seed content.
-3. **Secrets** — set the Worker secrets listed in `.dev.vars.example`.
-4. **Deploy** — API, then web, then admin.
-5. **Mobile** — configure EAS, build, submit to both stores.
+## Steps
 
-## A note on publishing the mobile app
+```bash
+npm install
 
-Apple's App Store Review Guideline 4.2.6 restricts apps built from templates
-or app-generation services. **Each church must publish under its own Apple
-Developer account**, not a shared one. Plan for this early: it affects who
-owns the listing, who can push updates, and what happens if you part ways
-with whoever set it up.
+cp -r examples/example-church brands/my-church
+$EDITOR brands/my-church/brand.json        # name, colours, fonts, URLs
+npx churchkit brand my-church
+
+npx churchkit provision my-church --dry-run   # read the plan before running it
+npx churchkit provision my-church --seed
+npx churchkit secrets   my-church             # prints a template if the file is missing
+npx churchkit deploy    my-church
+npx churchkit doctor    my-church
+```
+
+`provision` creates the D1 database and R2 bucket, writes each app's
+`wrangler.jsonc`, and applies the schema. It is safe to re-run, and cannot
+undo itself — hence the dry run first.
+
+## The two steps a script should not do for you
+
+**Custom domains.** `provision` prints which hostname belongs to which
+Worker; attach them in the Cloudflare dashboard.
+
+**Cloudflare Access.** Create an Access application covering the admin
+panel's hostname, choose which identity provider and which staff addresses
+may use it, then set its audience tag:
+
+```bash
+cd apps/api && npx wrangler secret put CF_ACCESS_AUD
+```
+
+Until you do, the admin API refuses every request and says so. That is
+deliberate: an unconfigured deployment is inaccessible, never open.
+
+## Trying it first
+
+```bash
+npx churchkit dev example-church
+```
+
+Runs the whole stack locally in Docker with no accounts anywhere. See
+[`docker/README.md`](../docker/README.md).
+
+## Publishing the mobile app
+
+Apple's App Store Review Guideline 4.2.6 restricts apps built from
+templates: **each church must publish under its own Apple Developer
+account**, with whoever maintains the app added as a manager. Decide that
+before the first submission — it determines who owns the listing and who
+can ship updates.
+
+A church migrating an app it already has must carry its existing bundle
+identifier, Android package name and OneSignal app ID across unchanged, or
+every member already carrying the app is stranded. See
+[`apps/mobile/README.md`](../apps/mobile/README.md).
 
 ## Scripture licensing
 

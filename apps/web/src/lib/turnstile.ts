@@ -9,7 +9,7 @@
  * that build their payload field by field, and resetting a spent token.
  */
 
-/** Matches TURNSTILE_TOKEN_FIELD in cedar-grove-api's src/lib/turnstile.ts. */
+/** Matches TURNSTILE_TOKEN_FIELD in the API's src/lib/turnstile.ts. */
 export const TURNSTILE_FIELD = 'cf-turnstile-response';
 
 /**

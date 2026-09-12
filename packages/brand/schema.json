@@ -4,97 +4,241 @@
   "title": "ChurchKit brand",
   "description": "Everything that makes a ChurchKit deployment look and sound like one particular church.",
   "type": "object",
-  "required": ["slug", "identity", "contact", "colors", "fonts", "urls"],
+  "required": [
+    "slug",
+    "identity",
+    "contact",
+    "colors",
+    "fonts",
+    "urls"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "$schema": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
     "identity": {
       "type": "object",
-      "required": ["name", "shortName", "tagline"],
+      "required": [
+        "name",
+        "shortName",
+        "tagline"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "shortName": { "type": "string", "description": "Used where space is tight, e.g. the mobile header." },
-        "tagline": { "type": "string" },
-        "description": { "type": "string", "description": "Default meta description." }
+        "name": {
+          "type": "string"
+        },
+        "shortName": {
+          "type": "string",
+          "description": "Used where space is tight, e.g. the mobile header."
+        },
+        "tagline": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Default meta description."
+        }
       }
     },
     "contact": {
       "type": "object",
-      "required": ["email"],
+      "required": [
+        "email"
+      ],
       "properties": {
-        "phone": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
         "address": {
           "type": "object",
           "properties": {
-            "street": { "type": "string" },
-            "city": { "type": "string" },
-            "region": { "type": "string" },
-            "postalCode": { "type": "string" },
-            "country": { "type": "string" }
+            "street": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "postalCode": {
+              "type": "string"
+            },
+            "country": {
+              "type": "string"
+            }
           }
         }
       }
     },
     "serviceTimes": {
       "type": "object",
-      "additionalProperties": { "type": "array", "items": { "type": "string" } },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "description": "Keyed by day, e.g. sunday / wednesday."
     },
     "colors": {
       "type": "object",
       "description": "All 6-digit hex. brand-on-white and ink-on-surface must clear 4.5:1 contrast.",
       "required": [
-        "brand", "brandMid", "brandLight", "brandPale", "brandFaint",
-        "accent", "accentPale", "ink", "inkSoft", "inkFaint",
-        "surface", "white", "border", "borderSoft", "error"
+        "brand",
+        "brandMid",
+        "brandLight",
+        "brandPale",
+        "brandFaint",
+        "accent",
+        "accentPale",
+        "ink",
+        "inkSoft",
+        "inkFaint",
+        "surface",
+        "white",
+        "border",
+        "borderSoft",
+        "error"
       ],
-      "additionalProperties": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^#[0-9a-fA-F]{6}$"
+      }
     },
     "fonts": {
       "type": "object",
-      "required": ["heading", "body", "display"],
+      "required": [
+        "heading",
+        "body",
+        "display"
+      ],
       "properties": {
-        "heading": { "$ref": "#/$defs/font" },
-        "body": { "$ref": "#/$defs/font" },
-        "display": { "$ref": "#/$defs/font" },
-        "webFontUrl": { "type": "string", "description": "Stylesheet URL, e.g. Google Fonts." },
+        "heading": {
+          "$ref": "#/$defs/font"
+        },
+        "body": {
+          "$ref": "#/$defs/font"
+        },
+        "display": {
+          "$ref": "#/$defs/font"
+        },
+        "webFontUrl": {
+          "type": "string",
+          "description": "Stylesheet URL, e.g. Google Fonts."
+        },
         "mobile": {
           "type": "object",
           "description": "expo-font family names, which differ from CSS family names.",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
     "urls": {
       "type": "object",
-      "required": ["web", "api"],
-      "additionalProperties": { "type": "string" }
+      "required": [
+        "web",
+        "api"
+      ],
+      "additionalProperties": {
+        "type": "string"
+      }
     },
-    "social": { "type": "object", "additionalProperties": { "type": "string" } },
+    "social": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
     "assets": {
       "type": "object",
       "description": "Paths relative to this brand directory.",
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "mobile": {
       "type": "object",
+      "description": "Identity of this church's mobile app build. Read by apps/mobile/app.config.ts.",
+      "additionalProperties": false,
       "properties": {
-        "scheme": { "type": "string", "description": "Deep-link URL scheme." },
-        "bundleIdentifier": { "type": "string", "description": "iOS. Cannot change after first App Store release." },
-        "androidPackage": { "type": "string", "description": "Android. Cannot change after first Play release." },
-        "splashBackgroundColor": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+        "scheme": {
+          "type": "string",
+          "description": "Deep-link URL scheme. Required to build."
+        },
+        "bundleIdentifier": {
+          "type": "string",
+          "description": "iOS. Required. CANNOT change after the first App Store release \u2014 a new one is a different app, and strands every installed member."
+        },
+        "androidPackage": {
+          "type": "string",
+          "description": "Android. Required. Same warning as bundleIdentifier."
+        },
+        "version": {
+          "type": "string",
+          "description": "Marketing version, e.g. 1.2.0. Defaults to 1.0.0."
+        },
+        "iosBuildNumber": {
+          "type": "string",
+          "description": "Increment for each App Store submission. Defaults to 1."
+        },
+        "androidVersionCode": {
+          "type": "integer",
+          "description": "Increment for each Play submission. Defaults to 1."
+        },
+        "splashBackgroundColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Defaults to colors.brand."
+        },
+        "easProjectId": {
+          "type": "string",
+          "description": "Expo EAS project. Only needed if you build with EAS."
+        },
+        "updatesUrl": {
+          "type": "string",
+          "description": "EAS Update endpoint. Omit to disable over-the-air updates."
+        },
+        "onesignalAppId": {
+          "type": "string",
+          "description": "Push. Omit for no push. CANNOT change on an app that already has installs \u2014 push silently stops reaching every existing phone."
+        },
+        "sentryDsn": {
+          "type": "string",
+          "description": "Error reporting. Omit to disable."
+        },
+        "associatedDomain": {
+          "type": "string",
+          "description": "Host serving attendance deep links, e.g. attendance.example.org. Omit if unused."
+        }
       }
     }
   },
   "$defs": {
     "font": {
       "type": "object",
-      "required": ["stack"],
+      "required": [
+        "stack"
+      ],
       "properties": {
-        "family": { "type": "string" },
-        "stack": { "type": "string", "description": "Full CSS font stack including fallbacks." }
+        "family": {
+          "type": "string"
+        },
+        "stack": {
+          "type": "string",
+          "description": "Full CSS font stack including fallbacks."
+        }
       }
     }
   }

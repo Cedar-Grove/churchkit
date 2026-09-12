@@ -19,9 +19,9 @@ const formats = formatsFrom(settings);
 const withYouTube = sermons.filter((s: any) => s.youtube_url);
 const allSeries = [...new Set(withYouTube.map((s: any) => s.series_title).filter(Boolean))] as string[];
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return formatDate(d, formats);
+/** Long date for a sermon, in the church's own zone. */
+function sermonDate(dateStr: string) {
+  return formatDate(new Date(dateStr), formats);
 }
 
 function getYouTubeId(url: string) {
@@ -79,7 +79,7 @@ function getYouTubeId(url: string) {
                     <p class="sermon-card__series">{sermon.series_title}</p>
                   )}
                   <h3 class="sermon-card__title">{sermon.title || 'Sunday Service'}</h3>
-                  <p class="sermon-card__date">{formatDate(sermon.date)}</p>
+                  <p class="sermon-card__date">{sermonDate(sermon.date)}</p>
                   <a href={sermon.youtube_url} target="_blank" rel="noopener" class="btn btn--primary sermon-card__btn">
                     <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> Watch
                   </a>

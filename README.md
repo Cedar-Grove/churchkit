@@ -6,10 +6,11 @@ ChurchKit gives a church its own branded website, iOS/Android app, and staff
 admin panel, backed by the Planning Center data it already maintains. Change
 a colour, a name, and a logo in one file, and the whole stack follows.
 
-> **Status: early.** ChurchKit is being extracted from a platform that has
-> been running in production for one church. The scaffolding and brand system
-> are in place; the applications are being ported in. It is not yet ready to
-> deploy. Watch releases if you want to know when it is.
+> **Status: pre-release.** All four applications are extracted and generic,
+> the provisioning tooling works, and everything builds and passes its tests.
+> What has *not* happened yet is a real deployment: no ChurchKit instance is
+> serving a live congregation, and the first one will find things. Treat it
+> as ready to try, not as proven.
 
 ---
 
@@ -17,11 +18,12 @@ a colour, a name, and a logo in one file, and the whole stack follows.
 
 | | |
 |---|---|
-| **`apps/api`** | Cloudflare Worker API — Planning Center proxy, sermons, events, forms, push, scripture |
+| **`apps/api`** | The API — Planning Center proxy, sermons, events, forms, push, scripture |
 | **`apps/web`** | Astro marketing site — home, ministries, events, media, forms, giving |
 | **`apps/admin`** | Astro + React staff panel — pages, staff, carousel, sermon notes, push |
 | **`apps/mobile`** | React Native / Expo app — sermons, Bible with audio, check-in, giving, notifications |
 | **`packages/brand`** | One `brand.json` → CSS custom properties + mobile theme |
+| **`tools`** | The `churchkit` command — provision, secrets, deploy, doctor, dev |
 
 Data lives in Cloudflare D1 and R2. Everything a church actually cares
 about — people, giving, groups, services, check-ins — stays in Planning
@@ -41,12 +43,12 @@ Church-specific configuration lives in exactly three places, never in code:
 |---|---|
 | Colours, fonts, logo, name, tagline, service times | `brand.json` |
 | Pages, staff, ministries, carousel content | your deployment's database |
-| API keys and routing addresses | Cloudflare Worker secrets |
+| API keys and routing addresses | Worker secrets, or environment variables |
 
 ```bash
 cp -r examples/example-church brands/my-church
 $EDITOR brands/my-church/brand.json
-npm run brand:build
+npx churchkit brand my-church
 ```
 
 The generator validates as it goes — including WCAG contrast on the colour
@@ -59,11 +61,24 @@ fails the build instead of shipping.
 git clone https://github.com/cedar-grove/churchkit
 cd churchkit
 npm install
+npx churchkit dev example-church     # the whole stack, in Docker, on your machine
 ```
 
-A live deployment needs accounts with Planning Center, Cloudflare, Resend,
-OneSignal, YouTube, and a scripture provider — each church registers its own.
-See [`docs/self-hosting.md`](docs/self-hosting.md).
+That needs no accounts with anyone. When you are ready to deploy:
+
+```bash
+npx churchkit provision my-church --dry-run   # read the plan first
+npx churchkit provision my-church --seed
+npx churchkit secrets    my-church
+npx churchkit deploy     my-church
+npx churchkit doctor     my-church            # what is configured, and what each gap turns off
+```
+
+Nothing beyond a database is required. A church that configures no
+credentials at all still gets a working website with pages, staff,
+ministries and forms — it just has no video, push, email or member login.
+See [`docs/self-hosting.md`](docs/self-hosting.md) for what each account
+gives you, and [`docker/README.md`](docker/README.md) for the local stack.
 
 ## Licence and expectations
 

@@ -24,9 +24,9 @@ const upcomingEvents =
 const carouselSlides: any[] =
   carouselResult.status === 'fulfilled' ? carouselResult.value : [];
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr);
-  return formatDate(d, formats, { month: 'short', day: 'numeric', year: 'numeric' });
+/** Short date for a sermon or featured event, in the church's own zone. */
+function shortDate(dateStr: string) {
+  return formatDate(new Date(dateStr), formats, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function stripHtml(html: string): string {
@@ -139,7 +139,7 @@ const formats = formatsFrom(settings);
           <div class="featured-strip__label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2l2.55 5.4 5.7.82-4.13 4.15.98 5.93L12 16.7l-5.1 2.8.97-5.93L3.75 9.42l5.7-.82L12 3.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Featured Event</div>
           <div class="featured-strip__title">{featuredEvent.name || 'Upcoming Event'}</div>
           {featuredEvent.starts_at && (
-            <div class="featured-strip__meta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.4h16v15H4zM4 10h16M8.6 2.8v4.6M15.4 2.8v4.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {formatDate(featuredEvent.starts_at)}</div>
+            <div class="featured-strip__meta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.4h16v15H4zM4 10h16M8.6 2.8v4.6M15.4 2.8v4.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {shortDate(featuredEvent.starts_at)}</div>
           )}
         </div>
         {featuredEvent.source === 'registrations' && (
@@ -157,7 +157,7 @@ const formats = formatsFrom(settings);
             <p class="section__eyebrow">Latest Message</p>
             <h2 class="section__heading">{latestSermonWithVideo.title || 'Sunday Service'}</h2>
             {latestSermonWithVideo.series_title && <p class="latest-sermon__series">{latestSermonWithVideo.series_title}</p>}
-            <p class="latest-sermon__date">{formatDate(latestSermonWithVideo.date)}</p>
+            <p class="latest-sermon__date">{shortDate(latestSermonWithVideo.date)}</p>
             <div class="latest-sermon__actions">
               <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="btn btn--primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> Watch Now</a>
               <a href="/media" class="btn btn--outline">Browse All Messages</a>

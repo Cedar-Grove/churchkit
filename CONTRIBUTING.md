@@ -35,13 +35,20 @@ submit it under the project's licence.
 ```bash
 git clone https://github.com/cedar-grove/churchkit
 cd churchkit
-npm install            # npm workspaces; installs every app and package
-cp .dev.vars.example apps/api/.dev.vars
-npm run dev -w apps/api
+npm install                          # npm workspaces; installs every app
+npx churchkit dev example-church     # whole stack in Docker, no accounts needed
 ```
 
-See `docs/self-hosting.md` for the full deployment path, including the
-fifteen third-party credentials a live instance needs.
+That is the quickest way to see it running. To work on one app on its own:
+
+```bash
+cp .dev.vars.example apps/api/.dev.vars   # every value optional
+npm run dev -w apps/api                   # needs apps/api/wrangler.jsonc
+npm run dev -w apps/web
+```
+
+`docs/self-hosting.md` covers deploying to Cloudflare, and
+`docs/self-hosting-node.md` running it without Cloudflare at all.
 
 ## The one rule that matters: no church-specific code
 
@@ -53,7 +60,7 @@ church-specific belongs in one of three places:
 |---|---|
 | Colours, fonts, logo, church name, tagline | `brand.json` (see `packages/brand`) |
 | Pages, staff, ministries, service times | the deployment's own database |
-| API keys, IDs, routing addresses | Cloudflare Worker secrets |
+| API keys, IDs, routing addresses | Worker secrets, or environment variables |
 
 A pull request that hardcodes anything from the list above will be asked to
 move it, however small. This is the single discipline that keeps the project
@@ -70,7 +77,10 @@ street addresses.
 - Comments explain *why*, not *what*. The existing code is fairly heavily
   commented where behaviour is non-obvious (quota budgets, cache TTLs, OAuth
   PKCE) — keep that up.
-- Run `npm run typecheck` and `npm test` before opening a PR.
+- Run `npm run typecheck` and `npm test` from the repository root before
+  opening a PR. Both run across every workspace.
+- Nothing may require an integration. A feature backed by a credential must
+  degrade to unavailable when it is unset — see `apps/api/src/lib/capabilities.ts`.
 
 ## Security
 

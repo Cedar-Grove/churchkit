@@ -48,15 +48,14 @@ try {
             )}
           </div>
         )) : (
-          <div class="staff-card">
-            <div class="staff-card__top">
-              <div class="staff-card__avatar">BA</div>
-              <div class="staff-card__info">
-                <h3 class="staff-card__name">Pastor Billy Abrams</h3>
-                <p class="staff-card__title">Senior Pastor</p>
-              </div>
-            </div>
-          </div>
+          /*
+            No fallback person. A placeholder staff member is published as
+            this church's own, under its name, on its domain — which is
+            exactly how one congregation's pastor ended up listed as
+            another's. An empty list says "add your staff"; a fallback says
+            something false and nobody notices.
+          */
+          <p class="section__body">Our staff will be listed here soon.</p>
         )}
       </div>
     </div>

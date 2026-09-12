@@ -4,6 +4,7 @@ Command-line tooling for standing up and maintaining a deployment.
 
 ```bash
 npm install
+npx churchkit dev example-church          # try it with no accounts anywhere
 npx churchkit provision my-church --dry-run
 ```
 
@@ -13,6 +14,8 @@ npx churchkit provision my-church --dry-run
 | `secrets <slug>` | Push credentials to the API worker from a local file |
 | `deploy <slug>` | Regenerate brand tokens, then build and deploy api, web and admin |
 | `doctor <slug>` | Report what is configured and what each gap switches off |
+| `dev <slug>` | Run the whole stack locally in Docker |
+| `brand <slug>` | Regenerate design tokens from that church's `brand.json` |
 
 A slug names a directory under `brands/` containing a `brand.json`. Start
 from `examples/example-church`.

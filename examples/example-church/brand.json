@@ -1,14 +1,12 @@
 {
   "$schema": "../../packages/brand/schema.json",
   "slug": "example-church",
-
   "identity": {
     "name": "Example Community Church",
     "shortName": "Example Church",
     "tagline": "A Place to Belong",
     "description": "A fictional church used as ChurchKit's reference configuration."
   },
-
   "contact": {
     "phone": "(555) 010-0100",
     "email": "hello@example.org",
@@ -20,12 +18,15 @@
       "country": "US"
     }
   },
-
   "serviceTimes": {
-    "sunday": ["9:00 AM — Bible Study", "10:30 AM — Worship Service"],
-    "wednesday": ["6:30 PM — Midweek Gathering"]
+    "sunday": [
+      "9:00 AM \u2014 Bible Study",
+      "10:30 AM \u2014 Worship Service"
+    ],
+    "wednesday": [
+      "6:30 PM \u2014 Midweek Gathering"
+    ]
   },
-
   "colors": {
     "brand": "#2f4858",
     "brandMid": "#5b7b8a",
@@ -43,11 +44,19 @@
     "borderSoft": "#ede9e0",
     "error": "#c0392b"
   },
-
   "fonts": {
-    "heading": { "family": "Cormorant Garamond", "stack": "'Cormorant Garamond', Georgia, serif" },
-    "body": { "family": "Roboto", "stack": "Roboto, system-ui, -apple-system, sans-serif" },
-    "display": { "family": "Roboto", "stack": "Roboto, system-ui, sans-serif" },
+    "heading": {
+      "family": "Cormorant Garamond",
+      "stack": "'Cormorant Garamond', Georgia, serif"
+    },
+    "body": {
+      "family": "Roboto",
+      "stack": "Roboto, system-ui, -apple-system, sans-serif"
+    },
+    "display": {
+      "family": "Roboto",
+      "stack": "Roboto, system-ui, sans-serif"
+    },
     "webFontUrl": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Roboto:wght@300;400;500;700&display=swap",
     "mobile": {
       "heading": "CormorantGaramond_600SemiBold",
@@ -57,7 +66,6 @@
       "bodyBold": "Roboto_700Bold"
     }
   },
-
   "urls": {
     "web": "https://example.org",
     "api": "https://api.example.org",
@@ -67,13 +75,11 @@
     "privacy": "https://example.org/privacy",
     "terms": "https://example.org/terms"
   },
-
   "social": {
     "facebook": "",
     "instagram": "",
     "youtube": ""
   },
-
   "assets": {
     "logoDark": "assets/logo-dark.png",
     "logoWhite": "assets/logo-white.png",
@@ -82,11 +88,18 @@
     "appSplash": "assets/splash.png",
     "favicon": "assets/favicon.png"
   },
-
   "mobile": {
     "scheme": "examplechurch",
     "bundleIdentifier": "org.example.church",
     "androidPackage": "org.example.church",
-    "splashBackgroundColor": "#2f4858"
+    "version": "1.0.0",
+    "iosBuildNumber": "1",
+    "androidVersionCode": 1,
+    "splashBackgroundColor": "#2f4858",
+    "easProjectId": "",
+    "updatesUrl": "",
+    "onesignalAppId": "",
+    "sentryDsn": "",
+    "associatedDomain": ""
   }
 }

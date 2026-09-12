@@ -6,7 +6,7 @@
  *
  * The API drops any submission that arrives with `website` set, and answers
  * with a normal success response so the bot doesn't learn to omit it. See
- * HONEYPOT_FIELDS in cedar-grove-api's src/lib/formGuard.ts.
+ * HONEYPOT_FIELDS in the API's src/lib/formGuard.ts.
  *
  * All four forms serialize with FormData, so this is picked up automatically
  * with no change to their submit handlers.

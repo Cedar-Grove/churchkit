@@ -4,7 +4,7 @@ import HoneypotField from '../components/HoneypotField.astro';
 import TurnstileWidget from '../components/TurnstileWidget.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
-import { getSettings } from '../lib/api';
+import { getSettings, getPage } from '../lib/api';
 import { env } from '../lib/env';
 
 let settings: any = {};
@@ -12,10 +12,20 @@ try {
   settings = await getSettings(env.API_BASE);
 } catch {}
 
-const serviceTimes = settings.service_times || {
-  sunday: ['9:00 AM — Sunday School', '10:00 AM — Worship Service'],
-  wednesday: ['11:00 AM — Adult Bible Study', '6:30 PM — Adults, Kids & Youth'],
-};
+// No invented times, and no assumption about which days. A wrong service
+// time sends a visitor to a locked building, in the church's own voice.
+const serviceTimes: Record<string, string[]> = settings.service_times ?? {};
+const serviceDays: [string, string[]][] = Object.entries(serviceTimes)
+  .filter(([, times]) => Array.isArray(times) && times.length > 0)
+  .map(([day, times]) => [day.charAt(0).toUpperCase() + day.slice(1), times as string[]]);
+
+// "What to expect" is this church's own writing, not ours. Anything the
+// previous version asserted here — dress code, parking, service length,
+// who preaches, how communion is taken — differs from church to church.
+let page: any = null;
+try {
+  page = await getPage('im-new', env.API_BASE);
+} catch {}
 ---
 
 <Layout title="I'm New" description="Planning your first visit? Here's what to expect.">
@@ -33,22 +43,14 @@ const serviceTimes = settings.service_times || {
   <section class="section times-section">
     <div class="container--narrow">
       <p class="section__eyebrow">When We Gather</p>
-      <h2 class="section__heading">Service Times</h2>
+      <h2 class="section__heading" hidden={serviceDays.length === 0}>Service Times</h2>
       <div class="times-grid">
-        <div class="time-block">
-          <h3 class="time-block__day">Sundays</h3>
-          {serviceTimes.sunday.map((t: string) => (
-            <div class="time-block__time">{t}</div>
-          ))}
-          <p class="time-block__note">Childcare is available for infants through 5th grade during the Worship Service.</p>
-        </div>
-        <div class="time-block">
-          <h3 class="time-block__day">Wednesdays</h3>
-          {serviceTimes.wednesday.map((t: string) => (
-            <div class="time-block__time">{t}</div>
-          ))}
-          <p class="time-block__note">Wednesday evenings include programming for adults, kids, and youth.</p>
-        </div>
+        {serviceDays.map(([day, times]) => (
+          <div class="time-block">
+            <h3 class="time-block__day">{day}</h3>
+            {times.map((t) => <div class="time-block__time">{t}</div>)}
+          </div>
+        ))}
       </div>
       <div class="location-card">
         <div class="location-card__info">
@@ -63,50 +65,20 @@ const serviceTimes = settings.service_times || {
     </div>
   </section>
 
-  <!-- What to Expect -->
-  <section class="section expect-section">
-    <div class="container--narrow">
-      <p class="section__eyebrow">Your First Visit</p>
-      <h2 class="section__heading">What to Expect</h2>
-      <div class="expect-list">
-        <div class="expect-item">
-          <div class="expect-item__num">1</div>
-          <div>
-            <h3 class="expect-item__title">Come as You Are</h3>
-            <p class="expect-item__body">There's no dress code. Some wear jeans, some wear ties. What matters is that you're here. Our Sunday worship runs about an hour and fifteen minutes.</p>
-          </div>
-        </div>
-        <div class="expect-item">
-          <div class="expect-item__num">2</div>
-          <div>
-            <h3 class="expect-item__title">Guest Parking</h3>
-            <p class="expect-item__body">Look for the guest parking spaces near the main entrance — we save them just for first-time visitors. A greeter will welcome you at the door.</p>
-          </div>
-        </div>
-        <div class="expect-item">
-          <div class="expect-item__num">3</div>
-          <div>
-            <h3 class="expect-item__title">Kids Are Welcome</h3>
-            <p class="expect-item__body">Children's ministry meets during the worship service. Our team will walk you through check-in when you arrive.</p>
-          </div>
-        </div>
-        <div class="expect-item">
-          <div class="expect-item__num">4</div>
-          <div>
-            <h3 class="expect-item__title">Worship Style</h3>
-            <p class="expect-item__body">Our Sunday services include contemporary and traditional worship, prayer, and a Biblical message from Pastor Billy Abrams. We take communion regularly as a church family.</p>
-          </div>
-        </div>
-        <div class="expect-item">
-          <div class="expect-item__num">5</div>
-          <div>
-            <h3 class="expect-item__title">After the Service</h3>
-            <p class="expect-item__body">We'd love to meet you! Stop by the Welcome Table in the foyer — our team will greet you, answer your questions, and share next steps for getting connected.</p>
-          </div>
-        </div>
+  {/*
+    What to expect is content, not layout: it belongs to the church, and is
+    edited on its `im-new` page in the admin panel. With nothing published,
+    this section is absent rather than filled with someone else's claims.
+  */}
+  {page?.content_html && (
+    <section class="section expect-section">
+      <div class="container--narrow">
+        <p class="section__eyebrow">Your First Visit</p>
+        <h2 class="section__heading">What to Expect</h2>
+        <div class="prose" set:html={page.content_html} />
       </div>
-    </div>
-  </section>
+    </section>
+  )}
 
   <!-- Visitor Form -->
   <section class="section form-section">
