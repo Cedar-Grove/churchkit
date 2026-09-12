@@ -106,6 +106,55 @@ the containers depend on — that the template's entry point exists, that the
 generated local config names a local database and no routes, that a local
 d1 command carries `--config`. See `tools/test/render.test.mjs`.
 
+### Look at the page, not just the response
+
+A passing API response proves the data moved. It does not prove anyone
+would want to look at the result, and this project has already shipped a
+site with no logo, an empty carousel, a 404 where the menu links to About,
+and one sentence per page — while every endpoint returned 200 and every
+test passed.
+
+Serving the site and reading it is cheap even without Docker:
+
+```bash
+# A database with the schema, the example content, and a church's identity.
+# All three matter: schema and content alone give a site with no name,
+# because identity lives in brand.json rather than in the seed.
+node --input-type=module -e "
+  import { DatabaseSync } from 'node:sqlite';
+  import { readFileSync } from 'node:fs';
+  import { toSettingsSql } from './packages/brand/src/seed.mjs';
+  const db = new DatabaseSync('/tmp/ck.db');
+  db.exec(readFileSync('apps/api/schema.sql', 'utf8'));
+  db.exec(readFileSync('apps/api/seed.example.sql', 'utf8'));
+  db.exec(toSettingsSql(JSON.parse(readFileSync('examples/example-church/brand.json', 'utf8'))));
+"
+npx churchkit brand example-church          # tokens and logos
+
+# The API, then the site in front of it
+(cd apps/api && npm run build:node)
+CHURCHKIT_DB=/tmp/ck.db PORT=8787 node apps/api/dist/server.mjs &
+(cd apps/web && CHURCHKIT_HOST=node ASTRO_TELEMETRY_DISABLED=1 npx astro build)
+(cd apps/web && API_BASE=http://127.0.0.1:8787 PORT=4321 node ./dist/server/entry.mjs) &
+
+curl -s localhost:4321/ | grep -oE '<title>[^<]*</title>'
+```
+
+
+Then actually check the things a visitor would notice first:
+
+- Does every link in the navigation and footer resolve? `/about`,
+  `/privacy` and `/terms` are database pages and 404 until something seeds
+  them.
+- Is there a logo, or a broken image icon where one should be?
+- Does the homepage have a carousel, and does any page have more than a
+  sentence on it?
+- Does it say the church's own name, or the example's?
+
+The rule this comes from: **a change is not verified until the thing a
+person sees has been looked at.** Endpoints and tests are the floor, not
+the finish.
+
 ## State
 
 All four apps are ported and generic. Provisioning, seeding and the local
