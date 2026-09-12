@@ -42,12 +42,13 @@ contact page. When a value is missing, render nothing and say why.
 ## Architecture
 
 ```
-apps/api      the API. app.ts routes; worker.ts and server.ts are hosts
-apps/web      Astro site. Pages are database rows, not files
-apps/admin    Astro + React staff panel, behind Cloudflare Access
-apps/mobile   Expo app. One build per church from brand.json
-packages/brand brand.json → CSS tokens, mobile theme, settings SQL
-tools         the `churchkit` CLI
+apps/api        the API. app.ts routes; worker.ts and server.ts are hosts
+apps/web        Astro site. Pages are database rows, not files
+apps/admin      Astro + React staff panel, behind Cloudflare Access
+apps/mobile     Expo app. One build per church from brand.json
+packages/brand  brand.json → CSS tokens, mobile theme, settings SQL
+packages/config values two or more apps must agree on
+tools           the `churchkit` CLI
 ```
 
 **Nothing is required except a database.** `apps/api/src/lib/capabilities.ts`
@@ -86,7 +87,10 @@ and the setting is cheaper than the support request.
 
 Every one of these was a **second copy of a fact** that drifted from the
 first. When you find yourself writing a value that already exists
-somewhere, derive it instead.
+somewhere, derive it instead — and when two apps genuinely need the same
+value, `packages/config` is where it goes. It ships `.mjs` with a
+hand-written `.d.ts` so the TypeScript apps keep their types and the plain
+JSX admin can import it without a build step.
 
 - The Worker's entry point moved to `src/worker.ts`; `churchkit dev` kept
   writing `src/index.ts` into its generated config. It now reads the entry
@@ -101,6 +105,10 @@ somewhere, derive it instead.
   container entrypoint installs from `/repo`.
 - A generated file written *once* outlives the code that generated it. The
   local wrangler config is rewritten every run for exactly this reason.
+- The font pairings were listed in both `apps/web/src/lib/theme.ts` and the
+  admin's picker, with a comment asking that both be kept in sync. A comment
+  is not a mechanism; they now come from `@churchkit/config/font-presets`,
+  so adding a preset is one edit.
 
 ## Verifying
 

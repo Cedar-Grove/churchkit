@@ -23,6 +23,7 @@ a colour, a name, and a logo in one file, and the whole stack follows.
 | **`apps/admin`** | Astro + React staff panel — pages, staff, carousel, sermon notes, push |
 | **`apps/mobile`** | React Native / Expo app — sermons, Bible with audio, check-in, giving, notifications |
 | **`packages/brand`** | One `brand.json` → CSS custom properties + mobile theme |
+| **`packages/config`** | Values two or more apps must agree on, so none holds a second copy |
 | **`tools`** | The `churchkit` command — provision, secrets, deploy, doctor, dev |
 
 Everything a church actually cares about — people, giving, groups, services,

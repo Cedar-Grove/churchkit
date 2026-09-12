@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "Shared TypeScript types and environment schema across ChurchKit apps.",
+  "description": "Values two or more ChurchKit apps must agree on, so none of them holds a second copy.",
   "type": "module",
   "exports": {
     "./font-presets": {
