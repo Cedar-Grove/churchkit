@@ -21,6 +21,10 @@ services:
       - npx
       - wrangler
       - dev
+      # Written by `churchkit dev`, and separate from any real wrangler.jsonc
+      # so the local stack can never reach a church's deployed database.
+      # Without this, wrangler finds no config at all and exits immediately.
+      - --config=wrangler.local.jsonc
       - --local
       - --ip=0.0.0.0
       - --port=8787

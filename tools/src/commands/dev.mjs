@@ -58,7 +58,13 @@ export async function dev({ slug, flags }) {
 	if (!ready) console.log('\n(continuing anyway to show the plan)');
 
 	if (action === 'down') {
-		run('docker', ['compose', '-f', resolve(DOCKER_DIR, 'docker-compose.yml'), 'down'], { dryRun });
+		// --clean also drops the volumes, which is what a half-created or
+		// stale dependency volume needs. It deletes the local database too:
+		// this is a rehearsal space, so that is recoverable by re-seeding.
+		const args = ['compose', '-f', resolve(DOCKER_DIR, 'docker-compose.yml'), 'down'];
+		if (flags.has('clean')) args.push('--volumes');
+		run('docker', args, { dryRun });
+		if (flags.has('clean')) console.log('\nVolumes removed. The next `dev` reinstalls dependencies and re-seeds.');
 		return 0;
 	}
 	if (action === 'logs') {
@@ -149,8 +155,23 @@ export async function dev({ slug, flags }) {
 
 	// ── Start ────────────────────────────────────────────────────
 	const compose = ['compose', '-f', resolve(DOCKER_DIR, 'docker-compose.yml')];
+
+	// Start from nothing when asked, for a volume left in a half-created
+	// state by an earlier failed run.
+	if (flags.has('clean')) {
+		console.log('\nRemoving existing containers and volumes');
+		run('docker', [...compose, 'down', '--volumes'], { dryRun });
+	}
 	const result = run('docker', [...compose, 'up', '--build', ...(flags.has('attach') ? [] : ['-d'])], { dryRun });
-	if (!result.ok && !result.dryRun) return 1;
+	if (!result.ok && !result.dryRun) {
+		// Compose reports that a container exited, never why. The reason is
+		// in that container's log, so print it here rather than leaving
+		// someone to discover `docker compose logs` on their own.
+		console.error('\n─── the API container\'s last output ───');
+		run('docker', [...compose, 'logs', '--no-color', '--tail=40', 'api'], {});
+		console.error('\nFull logs: churchkit dev ' + slug + ' --logs');
+		return 1;
+	}
 
 	// Seed once the API is up, so the local stack shows this church rather
 	// than an empty database. Re-running `dev` re-applies identity from

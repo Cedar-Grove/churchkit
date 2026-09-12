@@ -7,8 +7,13 @@
 set -e
 
 if [ ! -d /repo/node_modules/.bin ]; then
-	echo "→ installing workspace dependencies (first run only)…"
-	npm install --no-audit --no-fund
+	echo "→ installing workspace dependencies (first run only — this takes a few minutes)…"
+	if ! npm install --no-audit --no-fund; then
+		echo "✗ dependency install failed. Nothing below this would have worked." >&2
+		exit 1
+	fi
+	echo "→ dependencies installed."
 fi
 
+echo "→ starting: $*"
 exec "$@"

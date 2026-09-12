@@ -41,6 +41,7 @@ Options
   --only=api,web      deploy: deploy only these apps
   --attach            dev: stay in the foreground streaming logs
   --down / --logs     dev: stop the stack / follow its output
+  --clean             dev: discard containers and volumes first (also with --down)
   --yes               dev: install Docker without asking first
   --api-port=8787     dev: change a published port (also --web-port, --admin-port)
 
