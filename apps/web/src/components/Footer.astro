@@ -12,6 +12,7 @@ const churchName: string = settings.church_name ?? '';
 const address: string = settings.address ?? '';
 const phone: string = settings.phone ?? '';
 const email: string = settings.email ?? '';
+const logoSrc: string | null = settings.logo_white_url || logoWhite;
 
 // Only link what this church actually has. An empty social icon row or a
 // giving button that goes nowhere is worse than no row at all.
@@ -23,8 +24,8 @@ const social: [string, string][] = Object.entries(
 <footer class="footer">
   <div class="container footer__inner">
     <div class="footer__brand">
-      {logoWhite
-        ? <img src={logoWhite} alt={churchName} class="footer__logo" />
+      {logoSrc
+        ? <img src={logoSrc} alt={churchName} class="footer__logo" />
         : <p class="footer__wordmark">{churchName}</p>}
       {settings.tagline && <p class="footer__tagline">{settings.tagline}</p>}
     </div>

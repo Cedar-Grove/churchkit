@@ -19,6 +19,7 @@ const links = buildNav({ settings, ministries, capabilities });
 const churchName: string = settings.church_name ?? '';
 const phone: string = settings.phone ?? '';
 const givingUrl: string = settings.giving_url ?? '';
+const logoSrc: string | null = settings.logo_dark_url || logoDark;
 
 const currentPath = Astro.url.pathname;
 const isActive = (href: string) =>
@@ -35,8 +36,8 @@ const isActive = (href: string) =>
 <header class="mast">
   <div class="container mast__inner">
     <a href="/" class="mast__logo" aria-label={`${churchName} — home`}>
-      {logoDark
-        ? <img src={logoDark} alt={churchName} width="1000" height="331" />
+      {logoSrc
+        ? <img src={logoSrc} alt={churchName} width="1000" height="331" />
         : <span class="mast__wordmark">{churchName}</span>}
     </a>
 

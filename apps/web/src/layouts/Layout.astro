@@ -1,6 +1,7 @@
 ---
 import { getSettings } from '../lib/api';
 import { env } from '../lib/env';
+import { resolveFontPreset, deriveColors } from '../lib/theme';
 import '../styles/tokens.css';
 
 interface Props {
@@ -24,6 +25,12 @@ try {
 const churchName: string = settings.church_name ?? '';
 const fullTitle = [title, churchName].filter(Boolean).join(' — ') || title || churchName;
 const metaDescription = description ?? settings.tagline ?? '';
+
+// Curated, request-time theme override — see ../lib/theme. Absent settings
+// mean "use whatever packages/brand/generate.mjs compiled," so a church
+// that has never opened admin's Branding section is unaffected.
+const fontPreset = resolveFontPreset(settings.theme_font_pairing);
+const colorOverrides = deriveColors(settings.theme_primary_color, settings.theme_accent_color);
 ---
 
 <!DOCTYPE html>
@@ -39,13 +46,14 @@ const metaDescription = description ?? settings.tagline ?? '';
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   {/*
-    Web fonts are declared by the brand file, so a church chooses its own
-    typography without editing this layout. ChurchKit bundles no font
+    Web fonts are declared by the brand file (or overridden live from the
+    admin's Branding section — see ../lib/theme), so a church chooses its
+    own typography without editing this layout. ChurchKit bundles no font
     files: the defaults are open-licensed and loaded from Google Fonts, and
     a church with commercially licensed faces self-hosts them in its own
     brand directory rather than redistributing them here.
   */}
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600&family=Roboto:wght@300;400;500;700;900&display=swap">
+  <link rel="stylesheet" href={fontPreset.webFontUrl}>
   <style is:global>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html {
@@ -91,6 +99,18 @@ const metaDescription = description ?? settings.tagline ?? '';
       .prose { font-size: 19px; }
     }
   </style>
+  {/*
+    Astro hoists the static tokens.css import to wherever it batches styles
+    in <head>, which is not reliably after this block in the rendered
+    output — so overriding it can't depend on source order. `html:root`
+    (0,1,1) beats plain `:root` (0,1,0) at equal specificity-family instead.
+  */}
+  <style set:html={`html:root {
+    --font-heading: ${fontPreset.heading.stack};
+    --font-body: ${fontPreset.body.stack};
+    --font-display: ${fontPreset.display.stack};
+    ${Object.entries(colorOverrides).map(([k, v]) => `--${k}: ${v};`).join('\n    ')}
+  }`} />
 </head>
 <body>
   <slot />

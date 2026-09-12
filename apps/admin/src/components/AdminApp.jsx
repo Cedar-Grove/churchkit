@@ -1783,6 +1783,49 @@ function PdfUploadField({ label, value, onChange, toast }) {
   );
 }
 
+function LogoUploadField({ label, value, onChange, toast }) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleUpload(file) {
+    if (!file) return;
+    const fd = new FormData();
+    fd.append("file", file);
+    const token = getCFAccessToken();
+    setUploading(true);
+    try {
+      const res = await fetch(`${API}/api/admin/upload`, {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+        headers: token ? { "CF-Access-Jwt-Assertion": token } : {},
+      });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      onChange(url);
+      toast(`${label} uploaded`);
+    } catch {
+      toast(`${label} upload failed`, "error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Field label={label}>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={e => handleUpload(e.target.files[0])}
+        style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }}
+      />
+      {uploading && <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888", marginTop: 6 }}>Uploading…</div>}
+      {value && !uploading && (
+        <img src={value} alt={label} style={{ display: "block", marginTop: 10, maxHeight: 60, maxWidth: 220, borderRadius: 4 }} />
+      )}
+    </Field>
+  );
+}
+
 function SettingsSection({ title, children }) {
   return (
     <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 28, marginBottom: 24 }}>
@@ -1814,6 +1857,15 @@ function rowsToServiceTimes(rows) {
   }
   return out;
 }
+
+// Keep in sync with apps/web/src/lib/theme.ts's FONT_PRESETS — this only
+// needs id + label for the picker below, web needs the full CSS values.
+const FONT_PAIRINGS = [
+  ["classic", "Classic — Cormorant Garamond + Roboto"],
+  ["modern", "Modern — Playfair Display + Inter"],
+  ["warm", "Warm — Lora + Nunito Sans"],
+  ["minimal", "Minimal — Work Sans"],
+];
 
 function SettingsPage({ toast, caps }) {
   const [settings, setSettings] = useState({});
@@ -1875,6 +1927,58 @@ function SettingsPage({ toast, caps }) {
           <Field label="Address" style={{ gridColumn: "span 2" }}>
             <input style={inputStyle} value={settings.address || ""} onChange={e => set("address", e.target.value)} />
           </Field>
+        </div>
+      </SettingsSection>
+
+      {/*
+        Colors/fonts are otherwise compiled once from brand.json at build
+        time (packages/brand/generate.mjs) — these three fields let a
+        church override that live, with no rebuild. Left blank, everything
+        below renders exactly what was compiled in; nothing here can appear
+        in code, only in these settings rows. Mobile is unaffected: its
+        theme is baked into the app binary and only changes on its own next
+        build, regardless of anything set here.
+      */}
+      <SettingsSection title="Branding">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {[["Primary Color", "theme_primary_color"], ["Accent Color", "theme_accent_color"]].map(([l, k]) => (
+            <Field key={k} label={l}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input
+                  type="color"
+                  value={settings[k] || "#2d4a2b"}
+                  onChange={e => set(k, e.target.value)}
+                  style={{ width: 44, height: 36, padding: 2, border: "1.5px solid #ddd", borderRadius: 6, cursor: "pointer" }}
+                />
+                {settings[k]
+                  ? <button onClick={() => set(k, "")} style={{ ...btnSecondary, padding: "6px 12px", fontSize: 12 }}>Reset to default</button>
+                  : <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>Using deployed default</span>}
+              </div>
+            </Field>
+          ))}
+          <Field label="Font Pairing" style={{ gridColumn: "span 2" }}>
+            <select style={inputStyle} value={settings.theme_font_pairing || "classic"} onChange={e => set("theme_font_pairing", e.target.value)}>
+              {FONT_PAIRINGS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          </Field>
+          <div style={{ gridColumn: "span 2", display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "#faf8f3", borderRadius: 8, border: "1px solid #e8e4dd" }}>
+            <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_primary_color || "#2d4a2b", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Primary" />
+            <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_accent_color || "#b8924a", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Accent" />
+            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#666" }}>
+              {(FONT_PAIRINGS.find(([id]) => id === (settings.theme_font_pairing || "classic")) || [])[1]}
+              {" — fonts load from Google Fonts on the live site, not previewed here."}
+            </span>
+          </div>
+          {caps.mediaUploads ? (
+            <>
+              <LogoUploadField label="Logo (light background)" value={settings.logo_dark_url} onChange={url => set("logo_dark_url", url)} toast={toast} />
+              <LogoUploadField label="Logo (dark background / footer)" value={settings.logo_white_url} onChange={url => set("logo_white_url", url)} toast={toast} />
+            </>
+          ) : (
+            <div style={{ gridColumn: "span 2", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>
+              Configure media storage to enable logo uploads — using the deployed default logo for now.
+            </div>
+          )}
         </div>
       </SettingsSection>
 
