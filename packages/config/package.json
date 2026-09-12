@@ -9,6 +9,10 @@
     "./font-presets": {
       "types": "./src/font-presets.d.ts",
       "default": "./src/font-presets.mjs"
+    },
+    "./nav": {
+      "types": "./src/nav.d.ts",
+      "default": "./src/nav.mjs"
     }
   }
 }

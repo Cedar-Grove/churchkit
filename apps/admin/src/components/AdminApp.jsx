@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { listFontPresets } from "@churchkit/config/font-presets";
+import { buildNav } from "@churchkit/config/nav";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 // No default. A guessed API base would point one church's admin panel at
@@ -205,6 +206,7 @@ const NAV = [
   { id: "notifications", label: "Push Notifications", icon: "🔔" },
   { id: "submissions", label: "Form Submissions", icon: "📬" },
   { id: "mobile", label: "Mobile App", icon: "📱" },
+  { id: "navigation", label: "Navigation", icon: "☰" },
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
@@ -2219,6 +2221,168 @@ function SettingsPage({ toast, caps }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
+// PAGE: Navigation
+// ════════════════════════════════════════════════════════════════════════════════
+
+function moveInArray(arr, index, delta) {
+  const target = index + delta;
+  if (target < 0 || target >= arr.length) return arr;
+  const next = [...arr];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+function NavLinkRow({ link, onChange, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown, indent }) {
+  const children = link.children || [];
+  const updateChild = (i, patch) => onChange({ ...link, children: children.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) });
+  const removeChild = (i) => onChange({ ...link, children: children.filter((_, idx) => idx !== i) });
+  const addChild = () => onChange({ ...link, children: [...children, { href: "", label: "" }] });
+  const moveChild = (i, delta) => onChange({ ...link, children: moveInArray(children, i, delta) });
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e8e4dd", borderRadius: 10, padding: 14, marginBottom: 10, marginLeft: indent }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <button onClick={onMoveUp} disabled={!canMoveUp} style={moveBtnStyle}>↑</button>
+          <button onClick={onMoveDown} disabled={!canMoveDown} style={moveBtnStyle}>↓</button>
+        </div>
+        <input style={{ ...inputStyle, flex: "0 0 200px" }} value={link.label} placeholder="Label" onChange={e => onChange({ ...link, label: e.target.value })} />
+        <input style={{ ...inputStyle, flex: 1 }} value={link.href} placeholder="/path" onChange={e => onChange({ ...link, href: e.target.value })} />
+        <button onClick={onRemove} style={{ border: "1px solid #fcc", background: "#fff", color: "#c0392b", padding: "8px 12px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontFamily: "DM Sans, sans-serif" }}>Remove</button>
+      </div>
+      {children.length > 0 && (
+        <div style={{ marginTop: 10, paddingLeft: 40 }}>
+          {children.map((child, i) => (
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <button onClick={() => moveChild(i, -1)} disabled={i === 0} style={moveBtnStyle}>↑</button>
+                <button onClick={() => moveChild(i, 1)} disabled={i === children.length - 1} style={moveBtnStyle}>↓</button>
+              </div>
+              <input style={{ ...inputStyle, flex: "0 0 180px" }} value={child.label} placeholder="Label" onChange={e => updateChild(i, { label: e.target.value })} />
+              <input style={{ ...inputStyle, flex: 1 }} value={child.href} placeholder="/path" onChange={e => updateChild(i, { href: e.target.value })} />
+              <button onClick={() => removeChild(i)} style={{ border: "1px solid #fcc", background: "#fff", color: "#c0392b", padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ marginTop: 8, paddingLeft: 40 }}>
+        <button onClick={addChild} style={{ ...btnSecondary, padding: "6px 14px", fontSize: 12 }}>+ Add Dropdown Item</button>
+      </div>
+    </div>
+  );
+}
+
+const moveBtnStyle = {
+  width: 26, height: 20, border: "1px solid #ddd", background: "#fafafa", borderRadius: 4,
+  cursor: "pointer", fontSize: 11, lineHeight: 1, color: "#555",
+};
+
+function NavigationPage({ toast, settings, caps }) {
+  const [links, setLinks] = useState([]);
+  const [isCustom, setIsCustom] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api("/api/ministries").then(r => r.json()).then(d => {
+      const ministries = Array.isArray(d?.data) ? d.data : [];
+      // An explicit menu (nav_links) always wins once a church has saved
+      // one — same rule the website itself follows. Until then, this
+      // screen edits the same automatic menu the site is showing right
+      // now, computed the identical way, so nothing changes the moment a
+      // church's first edit here is saved.
+      if (settings.nav_links) {
+        try {
+          const parsed = typeof settings.nav_links === "string" ? JSON.parse(settings.nav_links) : settings.nav_links;
+          if (Array.isArray(parsed) && parsed.length) {
+            setLinks(parsed);
+            setIsCustom(true);
+            setLoading(false);
+            return;
+          }
+        } catch {}
+      }
+      setLinks(buildNav({ settings, ministries, capabilities: caps }));
+      setIsCustom(false);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+    // Only re-derive on first load: once a church starts editing, further
+    // settings/caps changes shouldn't yank their in-progress edits out
+    // from under them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const updateLink = (i, patch) => setLinks(links.map((l, idx) => (idx === i ? patch : l)));
+  const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
+  const addLink = () => setLinks([...links, { href: "", label: "" }]);
+  const moveLink = (i, delta) => setLinks(moveInArray(links, i, delta));
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await api("/api/admin/settings", { method: "POST", body: JSON.stringify({ nav_links: JSON.stringify(links) }) });
+      if (!res.ok) throw new Error();
+      setIsCustom(true);
+      toast("Navigation saved");
+    } catch {
+      toast("Save failed", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function resetToAutomatic() {
+    setSaving(true);
+    try {
+      const res = await api("/api/admin/settings", { method: "POST", body: JSON.stringify({ nav_links: "" }) });
+      if (!res.ok) throw new Error();
+      const d = await api("/api/ministries").then(r => r.json()).catch(() => ({}));
+      const ministries = Array.isArray(d?.data) ? d.data : [];
+      setLinks(buildNav({ settings: { ...settings, nav_links: "" }, ministries, capabilities: caps }));
+      setIsCustom(false);
+      toast("Reset to the automatic menu");
+    } catch {
+      toast("Reset failed", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <Loading />;
+
+  return (
+    <div style={{ padding: 32, maxWidth: 820 }}>
+      <div style={{ background: "#faf8f3", border: "1px solid #e8e4dd", borderRadius: 10, padding: "14px 18px", marginBottom: 24, fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#666" }}>
+        {isCustom
+          ? "This menu is a custom override — it no longer changes automatically when ministries or capabilities change."
+          : "This is the automatic menu, built from your ministry pages and configured features. Editing and saving it below turns it into a custom menu."}
+      </div>
+
+      {links.map((link, i) => (
+        <NavLinkRow
+          key={i}
+          link={link}
+          indent={0}
+          onChange={(patch) => updateLink(i, patch)}
+          onRemove={() => removeLink(i)}
+          onMoveUp={() => moveLink(i, -1)}
+          onMoveDown={() => moveLink(i, 1)}
+          canMoveUp={i > 0}
+          canMoveDown={i < links.length - 1}
+        />
+      ))}
+
+      <button onClick={addLink} style={{ ...btnSecondary, marginTop: 4 }}>+ Add Menu Item</button>
+
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 32, paddingTop: 20, borderTop: "1px solid #e8e4dd" }}>
+        <button onClick={resetToAutomatic} style={{ ...btnSecondary, borderColor: "#ccc", color: "#888" }} disabled={saving}>Reset to Automatic Menu</button>
+        <button onClick={save} style={{ ...btnPrimary, padding: "12px 32px", fontSize: 15 }} disabled={saving}>{saving ? "Saving…" : "Save Navigation"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
 // APP ROOT
 // ════════════════════════════════════════════════════════════════════════════════
 export default function App() {
@@ -2266,6 +2430,7 @@ export default function App() {
     pages: "Pages", "sermon-notes": "Sermon Notes",
     notifications: "Push Notifications", submissions: "Form Submissions",
     mobile: "Mobile App",
+    navigation: "Navigation",
     settings: "Settings",
   };
 
@@ -2286,6 +2451,7 @@ export default function App() {
       case "notifications": return caps.push ? <NotificationsPage {...props} /> : <HomepagePage {...props} />;
       case "submissions": return <SubmissionsPage {...props} />;
       case "mobile": return <MobileAppPage {...props} />;
+      case "navigation": return <NavigationPage {...props} />;
       case "settings": return <SettingsPage {...props} />;
       default: return <HomepagePage {...props} />;
     }
