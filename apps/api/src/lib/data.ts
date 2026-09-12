@@ -50,6 +50,9 @@ export async function getSettings(env: Env): Promise<Record<string, any>> {
 	if (map.service_times) {
 		try { map.service_times = JSON.parse(map.service_times); } catch {}
 	}
+	if (map.service_notes) {
+		try { map.service_notes = JSON.parse(map.service_notes); } catch {}
+	}
 	if (map.social) {
 		try { map.social = JSON.parse(map.social); } catch {}
 	}

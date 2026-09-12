@@ -78,11 +78,13 @@ describe('SqliteDatabase', () => {
 		await db.batch([
 			db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').bind('church_name', 'Example Church'),
 			db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').bind('service_times', '{"saturday":["6:00 PM"]}'),
+			db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').bind('service_notes', '{"saturday":"Casual dress."}'),
 		]);
 
 		const settings = await getSettings({ DB: db } as unknown as Env);
 		expect(settings.church_name).toBe('Example Church');
 		expect(settings.service_times).toEqual({ saturday: ['6:00 PM'] });
+		expect(settings.service_notes).toEqual({ saturday: 'Casual dress.' });
 	});
 
 	it('supports the ministries query the website depends on', async () => {
