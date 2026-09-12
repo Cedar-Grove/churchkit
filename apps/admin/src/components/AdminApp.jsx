@@ -1712,7 +1712,7 @@ function SubmissionsPage({ toast }) {
 // ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Mobile App
 // ════════════════════════════════════════════════════════════════════════════════
-function MobileAppPage({ toast }) {
+function MobileAppPage({ toast, settings }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
