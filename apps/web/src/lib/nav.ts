@@ -37,14 +37,27 @@ export const RESERVED_SLUGS = new Set([
 ]);
 
 export function buildNav({ settings, ministries, capabilities }: BuildNavInput): NavLink[] {
-  // An explicit menu always wins. Malformed JSON falls through to the
-  // derived menu rather than leaving a church with no navigation at all.
+  // An explicit menu always wins on structure and labels — but not on
+  // whether /media or /events actually has anything behind it. Without
+  // this, a church that customised its menu once keeps linking to an empty
+  // page forever, through no fault of its own, until it happens to notice
+  // and re-edit nav_links; and gets a broken-looking link the moment it
+  // *unconfigures* a capability it had customised the menu around.
+  const needsCapability: Record<string, keyof typeof capabilities> = {
+    '/media': 'sermons',
+    '/events': 'events',
+  };
+  const withCapabilityGates = (link: NavLink): boolean =>
+    !(link.href in needsCapability) || !!capabilities[needsCapability[link.href]];
+
   if (settings.nav_links) {
     try {
       const parsed = typeof settings.nav_links === 'string'
         ? JSON.parse(settings.nav_links)
         : settings.nav_links;
-      if (Array.isArray(parsed) && parsed.length) return parsed as NavLink[];
+      if (Array.isArray(parsed) && parsed.length) {
+        return (parsed as NavLink[]).filter(withCapabilityGates);
+      }
     } catch {}
   }
 
