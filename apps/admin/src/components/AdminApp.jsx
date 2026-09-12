@@ -2426,9 +2426,10 @@ const moveBtnStyle = {
 
 // A page's real URL, by the same rule apps/web's [...slug].astro and
 // /ministries/[slug].astro use. A church that has given a page its own
-// dedicated route (as cedargroveleeds did for /about/beliefs) will need to
-// correct the href after inserting it — this covers the common case, and
-// the href stays a free-editable field for exactly that reason.
+// dedicated route (its own file under apps/web/src/pages, rather than
+// falling through the generic [...slug] handler) will need to correct
+// the href after inserting it — this covers the common case, and the
+// href stays a free-editable field for exactly that reason.
 function pageToOption(page) {
   return {
     label: page.title || page.slug,

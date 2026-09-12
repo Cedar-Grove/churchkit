@@ -18,4 +18,5 @@ are the property of their respective owners:
   - Sentry is a trademark of Functional Software, Inc.
 
 Scripture text and audio are provided by third-party APIs under their own
-licences and are not distributed with this software. See docs/scripture.md.
+licences and are not distributed with this software. See "Scripture
+licensing" in docs/deploy-cloudflare.md.
