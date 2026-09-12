@@ -70,7 +70,16 @@ npm install
 npx churchkit dev example-church     # the whole stack, in Docker, on your machine
 ```
 
-That needs no accounts with anyone. When you are ready to deploy:
+That needs no accounts with anyone. To rehearse your own church — its name,
+colours and service times, with content you add in the local admin panel:
+
+```bash
+cp -r examples/example-church brands/my-church
+$EDITOR brands/my-church/brand.json
+npx churchkit dev my-church --example
+```
+
+When it looks right, deploy it:
 
 ```bash
 npx churchkit provision my-church --dry-run   # read the plan first

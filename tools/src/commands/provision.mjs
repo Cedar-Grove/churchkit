@@ -4,6 +4,15 @@ import { readBrand, appDir, resourceNames, REPO_ROOT } from '../lib/paths.mjs';
 import { validate } from '../../../packages/brand/src/validate.mjs';
 import { run } from '../lib/run.mjs';
 import { renderTemplate, writeConfig, parseDatabaseId, hostOf, zoneOf } from '../lib/render.mjs';
+import { seed } from './seed.mjs';
+
+/** A flags map with extra switches on, for delegating to another command. */
+function withFlags(flags, extra) {
+	const next = new Map(flags);
+	for (const key of extra) next.set(key, true);
+	next.has = Map.prototype.has.bind(next);
+	return next;
+}
 
 /**
  * Stand up the Cloudflare resources one church's deployment needs.
@@ -101,16 +110,14 @@ export async function provision({ slug, flags }) {
 	if (webResult.reason === 'exists') console.log('   apps/web/wrangler.jsonc exists — left alone (--force to overwrite)');
 
 	// ── 5. Schema and seed ───────────────────────────────────────
-	console.log('\n5. Database schema');
-	const api = appDir('api');
-	run('npx', [...wrangler, 'd1', 'execute', names.database, '--remote', '--file=schema.sql'], { dryRun, cwd: api });
-
-	if (flags.has('seed')) {
-		console.log('\n   Seeding example content');
-		run('npx', [...wrangler, 'd1', 'execute', names.database, '--remote', '--file=seed.example.sql'], { dryRun, cwd: api });
-	} else {
-		console.log('   (pass --seed to load example starter content)');
-	}
+	// Delegated to `seed`, which applies the schema and then this church's
+	// identity from brand.json. Identity always; the fictional starter pages
+	// only with --seed. A database that knows the church's name is useful
+	// immediately; one full of invented pages is only useful if you wanted
+	// them.
+	console.log('\n5. Schema and church identity');
+	const seeded = await seed({ slug, flags: withFlags(flags, flags.has('seed') ? ['example'] : []) });
+	if (seeded !== 0) return seeded;
 
 	// ── 6. What a person still has to do ─────────────────────────
 	console.log(`\n${'─'.repeat(56)}\nProvisioned. Four things still need a human:\n`);

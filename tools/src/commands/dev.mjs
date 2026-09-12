@@ -6,6 +6,34 @@ import { validate } from '../../../packages/brand/src/validate.mjs';
 import { ensureDocker } from '../lib/docker.mjs';
 import { run } from '../lib/run.mjs';
 import { parseEnvFile } from './secrets.mjs';
+import { seed } from './seed.mjs';
+
+/** A flags map with extra switches turned on, for delegating to another command. */
+function withFlags(flags, extra) {
+	const next = new Map(flags);
+	for (const key of extra) next.set(key, true);
+	next.has = Map.prototype.has.bind(next);
+	return next;
+}
+
+/**
+ * Poll the API's own health endpoint until it answers.
+ *
+ * The first run installs the whole workspace inside the container, which
+ * takes minutes — so this waits generously and says what it is waiting for,
+ * rather than failing on a timeout that looks like a broken setup.
+ */
+async function waitForApi(port, timeoutMs = 5 * 60 * 1000) {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		try {
+			const res = await fetch(`http://127.0.0.1:${port}/api/capabilities`);
+			if (res.ok) return true;
+		} catch {}
+		await new Promise((r) => setTimeout(r, 3000));
+	}
+	return false;
+}
 
 const DOCKER_DIR = resolve(REPO_ROOT, 'docker');
 
@@ -124,19 +152,33 @@ export async function dev({ slug, flags }) {
 	const result = run('docker', [...compose, 'up', '--build', ...(flags.has('attach') ? [] : ['-d'])], { dryRun });
 	if (!result.ok && !result.dryRun) return 1;
 
+	// Seed once the API is up, so the local stack shows this church rather
+	// than an empty database. Re-running `dev` re-applies identity from
+	// brand.json and leaves any content added in the admin panel alone.
+	if (!flags.has('no-seed') && !dryRun) {
+		console.log('\nWaiting for the API to come up…');
+		const healthy = await waitForApi(apiPort);
+		if (!healthy) {
+			console.error('  The API did not become healthy. Check: churchkit dev ' + slug + ' --logs');
+			return 1;
+		}
+		console.log('\nSeeding the local database');
+		await seed({ slug, flags: withFlags(flags, ['local', ...(flags.has('example') ? ['example'] : [])]) });
+	}
+
 	if (!flags.has('attach')) {
 		console.log(`
-Running:
+Running as ${brand.identity.name}:
   Website      http://localhost:${webPort}
   Admin panel  http://localhost:${adminPort}
   API          http://localhost:${apiPort}/api/capabilities
 
-The local database starts empty. To load the example content:
-  cd apps/api && npx wrangler d1 execute ${slug}-db-local --local \\
-    --persist-to=../../.wrangler/state --file=seed.example.sql
+  churchkit dev ${slug} --example   also load starter pages and a carousel
+  churchkit dev ${slug} --logs      follow output
+  churchkit dev ${slug} --down      stop everything
 
-  churchkit dev ${slug} --logs    follow output
-  churchkit dev ${slug} --down    stop everything
+Edit brand.json and re-run to update what the site shows. Pages and staff
+you add in the admin panel are kept.
 `);
 	}
 	return 0;

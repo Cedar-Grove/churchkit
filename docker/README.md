@@ -1,10 +1,14 @@
 # Local stack
 
 ```bash
-npx churchkit dev example-church
+cp -r examples/example-church brands/my-church
+$EDITOR brands/my-church/brand.json
+npx churchkit dev my-church --example
 ```
 
-Runs the API, website and admin panel in containers on your machine:
+Runs the API, website and admin panel in containers on your machine, as
+**your** church — name, colours, contact details and service times from your
+brand file, not the example's:
 
 | | |
 |---|---|
@@ -47,16 +51,29 @@ and a deployed Worker's request URL always carries the church's real domain.
 `churchkit secrets` refuses the name outright, and `churchkit doctor`
 reports it as a problem if it finds it set.
 
-## Loading content
+## A full rehearsal before deploying
 
-The local database starts empty, which is correct — ChurchKit ships no
-church's content. To load the fictional example:
+This is the point of the local stack: set the church up completely, click
+through it, and only then deploy.
 
-```bash
-cd apps/api
-npx wrangler d1 execute example-church-db-local --local \
-  --persist-to=../../.wrangler/state --file=seed.example.sql
-```
+1. **Identity** comes from `brand.json`, applied automatically each time
+   `churchkit dev` starts. Edit the file, re-run, and the site updates.
+2. **Content** — pages, staff, ministries, carousel — you add in the admin
+   panel at http://localhost:4322, exactly as you would in production. It
+   persists in `.wrangler/state` across restarts, and re-running `dev` does
+   not overwrite it.
+3. `--example` loads the fictional starter pages and a carousel slide, so a
+   brand-new deployment looks like a website rather than an empty shell.
+   Skip it if you would rather start from nothing.
+4. `--no-seed` skips the identity step entirely.
+
+When it looks right, `churchkit provision` and `churchkit deploy` set up the
+real thing — and `churchkit seed <slug>` applies the same identity there,
+without touching content.
+
+Content does not transfer from local to production. The local database is a
+rehearsal space, not a staging copy: what you type into the local admin
+panel stays local.
 
 ## Ports
 

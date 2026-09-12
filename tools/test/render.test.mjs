@@ -50,3 +50,55 @@ test('parseEnvFile keeps a blank value distinguishable from an absent one', () =
 	assert.equal(parsed.BLANK, '');
 	assert.ok(!('MISSING' in parsed));
 });
+
+import { settingsFromBrand, toSettingsSql } from '../../packages/brand/src/seed.mjs';
+
+const BRAND = {
+	slug: 'riverside',
+	identity: { name: 'Riverside Fellowship', tagline: "Grace on the River" },
+	contact: {
+		phone: '(555) 222-3344',
+		email: 'office@riverside.example',
+		address: { street: '88 River Road', city: 'Ashford', region: 'OR', postalCode: '97001' },
+	},
+	serviceTimes: { saturday: ['5:00 PM — Evening Worship'], sunday: [] },
+	urls: { web: 'https://riverside.example' },
+	timezone: 'America/Los_Angeles',
+};
+
+test('settingsFromBrand writes a US address with no comma before the postcode', () => {
+	assert.equal(settingsFromBrand(BRAND).address, '88 River Road, Ashford, OR 97001');
+});
+
+test('settingsFromBrand carries a Saturday-only schedule through', () => {
+	// The shape the original stack could not represent at all.
+	const times = JSON.parse(settingsFromBrand(BRAND).service_times);
+	assert.deepEqual(times, { saturday: ['5:00 PM — Evening Worship'] });
+});
+
+test('settingsFromBrand drops days with no services rather than storing empties', () => {
+	assert.ok(!('sunday' in JSON.parse(settingsFromBrand(BRAND).service_times)));
+});
+
+test('toSettingsSql escapes an apostrophe in a church name', () => {
+	const sql = toSettingsSql({ ...BRAND, identity: { name: "St Brigid's", tagline: '' } });
+	assert.ok(sql.includes("'St Brigid''s'"), 'apostrophe must be doubled for SQLite');
+});
+
+test('toSettingsSql writes settings only, never content tables', () => {
+	// Comments mention the content tables to explain what is left alone, so
+	// check the statements rather than the whole file.
+	const statements = toSettingsSql(BRAND)
+		.split('\n')
+		.filter((l) => !l.trim().startsWith('--'))
+		.join('\n');
+	assert.ok(statements.includes('INSERT OR REPLACE INTO settings'));
+	for (const table of ['pages', 'staff', 'carousel_slides', 'sermon_notes']) {
+		assert.ok(!statements.includes(table), `${table} must not be written by a brand seed`);
+	}
+});
+
+test('toSettingsSql tolerates a brand with no optional sections', () => {
+	const bare = { slug: 'x', identity: { name: 'X' }, contact: {}, urls: {} };
+	assert.doesNotThrow(() => toSettingsSql(bare));
+});

@@ -223,6 +223,14 @@
           "description": "Host serving attendance deep links, e.g. attendance.example.org. Omit if unused."
         }
       }
+    },
+    "timezone": {
+      "type": "string",
+      "description": "IANA timezone, e.g. America/Chicago. Event and service times are shown in it. Defaults to UTC."
+    },
+    "locale": {
+      "type": "string",
+      "description": "BCP 47 locale for date formatting, e.g. en-US or en-GB. Defaults to en-US."
     }
   },
   "$defs": {

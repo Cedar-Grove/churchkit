@@ -16,6 +16,7 @@ npx churchkit provision my-church --dry-run
 | `doctor <slug>` | Report what is configured and what each gap switches off |
 | `dev <slug>` | Run the whole stack locally in Docker |
 | `brand <slug>` | Regenerate design tokens from that church's `brand.json` |
+| `seed <slug>` | Load that church's identity from `brand.json` into its database |
 
 A slug names a directory under `brands/` containing a `brand.json`. Start
 from `examples/example-church`.

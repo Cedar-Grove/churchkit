@@ -22,11 +22,11 @@
   "locale": "en-US",
   "serviceTimes": {
     "sunday": [
-      "9:00 AM \u2014 Bible Study",
-      "10:30 AM \u2014 Worship Service"
+      "9:00 AM — Bible Study",
+      "10:30 AM — Worship Service"
     ],
     "wednesday": [
-      "6:30 PM \u2014 Midweek Gathering"
+      "6:30 PM — Midweek Gathering"
     ]
   },
   "colors": {
