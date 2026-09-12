@@ -2232,7 +2232,31 @@ function moveInArray(arr, index, delta) {
   return next;
 }
 
-function NavLinkRow({ link, onChange, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown, indent }) {
+// A page picker still leaves label/href free-editable — it only ever fills
+// them in, once, on selection. That way an existing page's title and URL
+// are one click away without giving up the ability to link somewhere the
+// page list doesn't cover (an anchor, an external site, a future route).
+function PagePicker({ pageOptions, onPick }) {
+  if (!pageOptions.length) return null;
+  return (
+    <select
+      value=""
+      onChange={e => {
+        if (!e.target.value) return;
+        const picked = JSON.parse(e.target.value);
+        onPick(picked);
+      }}
+      style={{ ...inputStyle, flex: "0 0 168px", color: "#888", fontSize: 13 }}
+    >
+      <option value="">Insert a page…</option>
+      {pageOptions.map(p => (
+        <option key={p.href} value={JSON.stringify(p)}>{p.label} — {p.href}</option>
+      ))}
+    </select>
+  );
+}
+
+function NavLinkRow({ link, onChange, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown, indent, pageOptions }) {
   const children = link.children || [];
   const updateChild = (i, patch) => onChange({ ...link, children: children.map((c, idx) => (idx === i ? { ...c, ...patch } : c)) });
   const removeChild = (i) => onChange({ ...link, children: children.filter((_, idx) => idx !== i) });
@@ -2246,6 +2270,7 @@ function NavLinkRow({ link, onChange, onRemove, onMoveUp, onMoveDown, canMoveUp,
           <button onClick={onMoveUp} disabled={!canMoveUp} style={moveBtnStyle}>↑</button>
           <button onClick={onMoveDown} disabled={!canMoveDown} style={moveBtnStyle}>↓</button>
         </div>
+        <PagePicker pageOptions={pageOptions} onPick={picked => onChange({ ...link, label: picked.label, href: picked.href })} />
         <input style={{ ...inputStyle, flex: "0 0 200px" }} value={link.label} placeholder="Label" onChange={e => onChange({ ...link, label: e.target.value })} />
         <input style={{ ...inputStyle, flex: 1 }} value={link.href} placeholder="/path" onChange={e => onChange({ ...link, href: e.target.value })} />
         <button onClick={onRemove} style={{ border: "1px solid #fcc", background: "#fff", color: "#c0392b", padding: "8px 12px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontFamily: "DM Sans, sans-serif" }}>Remove</button>
@@ -2258,6 +2283,7 @@ function NavLinkRow({ link, onChange, onRemove, onMoveUp, onMoveDown, canMoveUp,
                 <button onClick={() => moveChild(i, -1)} disabled={i === 0} style={moveBtnStyle}>↑</button>
                 <button onClick={() => moveChild(i, 1)} disabled={i === children.length - 1} style={moveBtnStyle}>↓</button>
               </div>
+              <PagePicker pageOptions={pageOptions} onPick={picked => updateChild(i, { label: picked.label, href: picked.href })} />
               <input style={{ ...inputStyle, flex: "0 0 180px" }} value={child.label} placeholder="Label" onChange={e => updateChild(i, { label: e.target.value })} />
               <input style={{ ...inputStyle, flex: 1 }} value={child.href} placeholder="/path" onChange={e => updateChild(i, { href: e.target.value })} />
               <button onClick={() => removeChild(i)} style={{ border: "1px solid #fcc", background: "#fff", color: "#c0392b", padding: "6px 10px", borderRadius: 6, cursor: "pointer", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}>✕</button>
@@ -2277,15 +2303,46 @@ const moveBtnStyle = {
   cursor: "pointer", fontSize: 11, lineHeight: 1, color: "#555",
 };
 
+// A page's real URL, by the same rule apps/web's [...slug].astro and
+// /ministries/[slug].astro use. A church that has given a page its own
+// dedicated route (as cedargroveleeds did for /about/beliefs) will need to
+// correct the href after inserting it — this covers the common case, and
+// the href stays a free-editable field for exactly that reason.
+function pageToOption(page) {
+  return {
+    label: page.title || page.slug,
+    href: page.is_ministry ? `/ministries/${page.slug}` : `/${page.slug}`,
+  };
+}
+
+// Real site sections that aren't rows in the pages table, so the picker
+// would otherwise never offer them. Media/Events only appear when their
+// capability is actually configured — same rule save-time filtering
+// enforces, just surfaced earlier so the picker doesn't offer a dead end.
+function builtInPageOptions(settings, caps) {
+  const opts = [
+    { label: "Home", href: "/" },
+    { label: "Ministries (index)", href: "/ministries" },
+    { label: "Contact", href: "/contact" },
+  ];
+  if (caps.sermons) opts.push({ label: "Media", href: "/media" });
+  if (caps.events) opts.push({ label: "Events", href: "/events" });
+  if (settings.giving_url) opts.push({ label: "Give", href: "/give" });
+  return opts;
+}
+
 function NavigationPage({ toast, settings, caps }) {
   const [links, setLinks] = useState([]);
+  const [pages, setPages] = useState([]);
   const [isCustom, setIsCustom] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api("/api/ministries").then(r => r.json()).then(d => {
-      const ministries = Array.isArray(d?.data) ? d.data : [];
+    api("/api/admin/pages").then(r => r.json()).then(d => {
+      const allPages = Array.isArray(d?.data) ? d.data : [];
+      setPages(allPages);
+      const ministries = allPages.filter(p => p.is_ministry && p.status === "published");
       // An explicit menu (nav_links) always wins once a church has saved
       // one — same rule the website itself follows. Until then, this
       // screen edits the same automatic menu the site is showing right
@@ -2312,6 +2369,11 @@ function NavigationPage({ toast, settings, caps }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const pageOptions = [
+    ...builtInPageOptions(settings, caps),
+    ...pages.filter(p => p.status === "published").map(pageToOption),
+  ];
+
   const updateLink = (i, patch) => setLinks(links.map((l, idx) => (idx === i ? patch : l)));
   const removeLink = (i) => setLinks(links.filter((_, idx) => idx !== i));
   const addLink = () => setLinks([...links, { href: "", label: "" }]);
@@ -2336,8 +2398,7 @@ function NavigationPage({ toast, settings, caps }) {
     try {
       const res = await api("/api/admin/settings", { method: "POST", body: JSON.stringify({ nav_links: "" }) });
       if (!res.ok) throw new Error();
-      const d = await api("/api/ministries").then(r => r.json()).catch(() => ({}));
-      const ministries = Array.isArray(d?.data) ? d.data : [];
+      const ministries = pages.filter(p => p.is_ministry && p.status === "published");
       setLinks(buildNav({ settings: { ...settings, nav_links: "" }, ministries, capabilities: caps }));
       setIsCustom(false);
       toast("Reset to the automatic menu");
@@ -2351,7 +2412,7 @@ function NavigationPage({ toast, settings, caps }) {
   if (loading) return <Loading />;
 
   return (
-    <div style={{ padding: 32, maxWidth: 820 }}>
+    <div style={{ padding: 32, maxWidth: 900 }}>
       <div style={{ background: "#faf8f3", border: "1px solid #e8e4dd", borderRadius: 10, padding: "14px 18px", marginBottom: 24, fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#666" }}>
         {isCustom
           ? "This menu is a custom override — it no longer changes automatically when ministries or capabilities change."
@@ -2363,6 +2424,7 @@ function NavigationPage({ toast, settings, caps }) {
           key={i}
           link={link}
           indent={0}
+          pageOptions={pageOptions}
           onChange={(patch) => updateLink(i, patch)}
           onRemove={() => removeLink(i)}
           onMoveUp={() => moveLink(i, -1)}
