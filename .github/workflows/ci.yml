@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Every workspace's tests and typecheck run against local fixtures
+      # only (example-church, my-church) — no Cloudflare, Planning Center,
+      # or any other account needed, so no secrets are configured here.
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run build
