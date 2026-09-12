@@ -393,3 +393,18 @@ export function getLatestSermonWithVideo(sermons: any[]): any {
 	// getLatestSermon() if today's video hasn't been uploaded yet.
 	return pastSermons.find(s => s.youtube_url) || null;
 }
+
+/**
+ * `app_version` was added to schema.sql after some deployments' D1
+ * databases already existed with the older device_tokens shape — same
+ * situation as pages' image columns (see admin.ts's ensurePagesImageColumn).
+ * Both /api/push/register and the admin device-stats read need this column
+ * to exist, so it's shared here rather than duplicated in each.
+ */
+export async function ensureDeviceTokensColumns(env: Env): Promise<void> {
+	const { results } = await env.DB.prepare('PRAGMA table_info(device_tokens)').all();
+	const cols = new Set((results as any[]).map(r => r.name));
+	if (!cols.has('app_version')) {
+		await env.DB.prepare('ALTER TABLE device_tokens ADD COLUMN app_version TEXT').run();
+	}
+}

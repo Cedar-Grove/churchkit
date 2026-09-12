@@ -1715,12 +1715,18 @@ function SubmissionsPage({ toast }) {
 function MobileAppPage({ toast, settings }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     api("/api/admin/device-stats")
-      .then(r => r.json())
+      .then(async r => {
+        // A failed request must not read the same as zero devices — that
+        // difference is the whole reason this page exists.
+        if (!r.ok) throw new Error((await r.json().catch(() => null))?.error || `Request failed (${r.status})`);
+        return r.json();
+      })
       .then(d => setStats(d?.data || null))
-      .catch(() => setStats(null))
+      .catch(e => setError(e.message || "Failed to load device stats"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -1741,6 +1747,8 @@ function MobileAppPage({ toast, settings }) {
       </div>
     </div>
   );
+
+  if (error) return <ErrorMsg msg={error} />;
 
   return (
     <div style={{ padding: 32, maxWidth: 900 }}>
@@ -1817,7 +1825,7 @@ function MobileAppPage({ toast, settings }) {
                   </td>
                   <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{d.app_version || "—"}</td>
                   <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{d.pco_person_id || "—"}</td>
-                  <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{fmtDate(d.last_seen)}</td>
+                  <td style={{ padding: "12px 20px", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{fmtDate(d.last_seen_at)}</td>
                 </tr>
               ))}
             </tbody>

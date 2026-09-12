@@ -1,5 +1,6 @@
 import type { Env } from '../types';
 import { json, err } from '../lib/response';
+import { ensureDeviceTokensColumns } from '../lib/data';
 
 /**
  * A OneSignal player ID is a UUID. Validating the shape keeps junk out of
@@ -36,13 +37,14 @@ export async function handlePushRegister(request: Request, env: Env): Promise<Re
 	// device to any member's record, and push targeting reads that column.
 	// Rows written before this are left as they are; the column is only
 	// writable from an authenticated path that can actually prove the link.
+	await ensureDeviceTokensColumns(env);
 	await env.DB.prepare(`
-		INSERT INTO device_tokens (onesignal_player_id, platform, app_version, registered_at, last_seen)
+		INSERT INTO device_tokens (onesignal_player_id, platform, app_version, created_at, last_seen_at)
 		VALUES (?, ?, ?, unixepoch(), unixepoch())
 		ON CONFLICT(onesignal_player_id) DO UPDATE SET
-		  platform    = excluded.platform,
-		  app_version = excluded.app_version,
-		  last_seen   = unixepoch()
+		  platform     = excluded.platform,
+		  app_version  = excluded.app_version,
+		  last_seen_at = unixepoch()
 	`).bind(
 		player_id,
 		platform === 'ios' || platform === 'android' ? platform : null,

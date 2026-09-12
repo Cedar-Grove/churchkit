@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS device_tokens (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   onesignal_player_id TEXT UNIQUE NOT NULL,
   platform TEXT,                          -- 'ios' | 'android'
+  app_version TEXT,                       -- from the app's own package version
   pco_person_id TEXT,                     -- linked person, optional
   created_at INTEGER DEFAULT (unixepoch()),
   last_seen_at INTEGER DEFAULT (unixepoch())

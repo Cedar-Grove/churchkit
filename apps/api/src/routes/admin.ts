@@ -2,7 +2,7 @@ import type { Env } from '../types';
 import { json, err, notConfigured } from '../lib/response';
 import { pcoFetch } from '../lib/pco';
 import { sendPush } from '../lib/push';
-import { getSettings, getMergedSermons } from '../lib/data';
+import { getSettings, getMergedSermons, ensureDeviceTokensColumns } from '../lib/data';
 import { getChurchDetails } from '../lib/template';
 export { verifyAccessJWT } from '../lib/access-jwt';
 
@@ -298,12 +298,13 @@ export async function handleAdmin(
 
 	// ── Device Stats ───────────────────────────────────────────
 	if (path === '/api/admin/device-stats' && method === 'GET') {
+		await ensureDeviceTokensColumns(env);
 		const [totalRow, iosRow, androidRow, recentRows] = await Promise.all([
 			env.DB.prepare('SELECT COUNT(*) as count FROM device_tokens').first<{ count: number }>(),
 			env.DB.prepare("SELECT COUNT(*) as count FROM device_tokens WHERE platform = 'ios'").first<{ count: number }>(),
 			env.DB.prepare("SELECT COUNT(*) as count FROM device_tokens WHERE platform = 'android'").first<{ count: number }>(),
 			env.DB.prepare(
-				'SELECT onesignal_player_id, platform, app_version, pco_person_id, registered_at, last_seen FROM device_tokens ORDER BY last_seen DESC LIMIT 20'
+				'SELECT onesignal_player_id, platform, app_version, pco_person_id, created_at, last_seen_at FROM device_tokens ORDER BY last_seen_at DESC LIMIT 20'
 			).all(),
 		]);
 		return json({
