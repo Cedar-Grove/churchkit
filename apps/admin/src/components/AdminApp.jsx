@@ -207,6 +207,7 @@ const NAV = [
   { id: "submissions", label: "Form Submissions", icon: "📬" },
   { id: "mobile", label: "Mobile App", icon: "📱" },
   { id: "navigation", label: "Navigation", icon: "☰" },
+  { id: "health", label: "System Health", icon: "🩺" },
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
@@ -1837,6 +1838,84 @@ function MobileAppPage({ toast, settings }) {
 }
 
 // ════════════════════════════════════════════════════════════════════════════════
+// PAGE: System Health
+// ════════════════════════════════════════════════════════════════════════════════
+
+function HealthCard({ check }) {
+  const { label, color, text } = check.ok === true
+    ? { label: "Working", color: "#e8f5e8", text: "#2d6e2d" }
+    : check.ok === false
+    ? { label: "Failing", color: "#fde8e8", text: "#c0392b" }
+    : check.configured
+    ? { label: "Configured", color: "#f0f0f5", text: "#555" }
+    : { label: "Not Configured", color: "#f5f5f5", text: "#aaa" };
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: "20px 24px", marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+        <div style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "#2d4a2b" }}>{check.name}</div>
+        <Badge label={label} color={color} text={text} />
+      </div>
+      <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888", marginTop: 8, lineHeight: 1.5 }}>{check.detail}</div>
+    </div>
+  );
+}
+
+function HealthPage({ toast }) {
+  const [checks, setChecks] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState(null);
+  const [checkedAt, setCheckedAt] = useState(null);
+
+  async function load() {
+    setChecking(true);
+    try {
+      const res = await api("/api/admin/health");
+      if (!res.ok) throw new Error((await res.json().catch(() => null))?.error || `Request failed (${res.status})`);
+      const d = await res.json();
+      setChecks(Array.isArray(d?.data) ? d.data : []);
+      setCheckedAt(new Date());
+      setError(null);
+    } catch (e) {
+      setError(e.message || "Failed to run health checks");
+    } finally {
+      setLoading(false);
+      setChecking(false);
+    }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorMsg msg={error} />;
+
+  const failing = checks.filter(c => c.ok === false).length;
+
+  return (
+    <div style={{ padding: 32, maxWidth: 760 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>
+          {failing > 0
+            ? `${failing} integration${failing === 1 ? "" : "s"} configured but not authenticating.`
+            : "Every configured integration is authenticating correctly."}
+          {checkedAt && <span> Last checked {checkedAt.toLocaleTimeString()}.</span>}
+        </div>
+        <button onClick={load} style={btnSecondary} disabled={checking}>{checking ? "Checking…" : "Re-check"}</button>
+      </div>
+
+      {checks.map(c => <HealthCard key={c.name} check={c} />)}
+
+      <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#aaa", marginTop: 8, lineHeight: 1.6 }}>
+        This makes a real call to each configured provider — it checks that a credential actually authenticates, not just
+        that it's set. "Not Configured" means the feature is simply unused, which is normal for a deployment that hasn't
+        set up every integration.
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Settings
 // ════════════════════════════════════════════════════════════════════════════════
 function PdfUploadField({ label, value, onChange, toast }) {
@@ -2501,6 +2580,7 @@ export default function App() {
     notifications: "Push Notifications", submissions: "Form Submissions",
     mobile: "Mobile App",
     navigation: "Navigation",
+    health: "System Health",
     settings: "Settings",
   };
 
@@ -2522,6 +2602,7 @@ export default function App() {
       case "submissions": return <SubmissionsPage {...props} />;
       case "mobile": return <MobileAppPage {...props} />;
       case "navigation": return <NavigationPage {...props} />;
+      case "health": return <HealthPage {...props} />;
       case "settings": return <SettingsPage {...props} />;
       default: return <HomepagePage {...props} />;
     }

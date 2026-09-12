@@ -3,6 +3,7 @@ import { json, err, notConfigured } from '../lib/response';
 import { pcoFetch } from '../lib/pco';
 import { sendPush } from '../lib/push';
 import { getSettings, getMergedSermons, ensureDeviceTokensColumns } from '../lib/data';
+import { runHealthChecks } from '../lib/health';
 import { getChurchDetails } from '../lib/template';
 export { verifyAccessJWT } from '../lib/access-jwt';
 
@@ -315,6 +316,14 @@ export async function handleAdmin(
 				recent: recentRows.results,
 			},
 		});
+	}
+
+	// ── Health ───────────────────────────────────────────────────
+	// Whether each configured credential actually authenticates, not just
+	// whether the env var is non-empty — see lib/health.ts for why that
+	// distinction needs a real call per integration.
+	if (path === '/api/admin/health' && method === 'GET') {
+		return json({ data: await runHealthChecks(env) });
 	}
 
 	// ── Form Submissions ───────────────────────────────────────
