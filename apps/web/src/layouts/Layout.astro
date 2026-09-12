@@ -77,7 +77,12 @@ const colorOverrides = deriveColors(settings.theme_primary_color, settings.theme
     .btn--secondary:hover { background: rgba(255,255,255,0.2); }
     .btn--outline { background: transparent; color: var(--brand); border: 2px solid var(--brand); }
     .btn--outline:hover { background: var(--brand-faint); }
-    .btn--accent { background: var(--accent); color: var(--white); }
+    /* --accent is meant as a highlight tone — lighter and more saturated
+       than a background color — so dark text reads reliably against it
+       regardless of which accent a church picks. White text looked fine
+       against ChurchKit's own sample accent and nearly unreadable against
+       a paler one a church had actually chosen. */
+    .btn--accent { background: var(--accent); color: var(--ink); }
     .btn--accent:hover { background: var(--brand-light); transform: translateY(-1px); }
 
     .section { padding: 72px 0; }

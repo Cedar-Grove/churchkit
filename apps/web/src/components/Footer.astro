@@ -24,32 +24,42 @@ const social: [string, string][] = Object.entries(
 ---
 
 <footer class="footer">
-  <div class="container footer__inner">
+  <div class="footer__inner container">
     <div class="footer__brand">
       {logoSrc
         ? <img src={logoSrc} alt={churchName} class="footer__logo" />
         : <p class="footer__wordmark">{churchName}</p>}
       {settings.tagline && <p class="footer__tagline">{settings.tagline}</p>}
+      {(address || phone || email) && (
+        <div class="footer__info">
+          {address}{address && (phone || email) && <br />}
+          {phone && <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`}>{phone}</a>}
+          {phone && email && <br />}
+          {email && <a href={`mailto:${email}`}>{email}</a>}
+        </div>
+      )}
     </div>
 
-    <div class="footer__col">
-      {address && <p class="footer__line">{address}</p>}
-      {phone && <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`} class="footer__line">{phone}</a>}
-      {email && <a href={`mailto:${email}`} class="footer__line">{email}</a>}
+    <div>
+      <p class="footer__col-title">About</p>
+      <a href="/about" class="footer__link">About Us</a>
+      <a href="/leadership" class="footer__link">Our Staff</a>
+      <a href="/contact" class="footer__link">Contact</a>
     </div>
 
-    <div class="footer__col">
-      <a href="/about" class="footer__line">About</a>
-      {capabilities.sermons && <a href="/media" class="footer__line">Media</a>}
-      {capabilities.events && <a href="/events" class="footer__line">Events</a>}
-      <a href="/contact" class="footer__line">Contact</a>
-      {settings.giving_url && <a href="/give" class="footer__line">Give</a>}
+    <div>
+      <p class="footer__col-title">Connect</p>
+      <a href="/connect-card" class="footer__link">Connect Card</a>
+      {capabilities.events && <a href="/events" class="footer__link">Events</a>}
+      {capabilities.sermons && <a href="/media" class="footer__link">Sermons</a>}
+      {settings.giving_url && <a href="/give" class="footer__link">Give</a>}
     </div>
 
     {social.length > 0 && (
-      <div class="footer__col">
+      <div>
+        <p class="footer__col-title">Follow</p>
         {social.map(([name, url]) => (
-          <a href={url} class="footer__line" rel="noopener noreferrer" target="_blank">
+          <a href={url} class="footer__link" rel="noopener noreferrer" target="_blank">
             {name.charAt(0).toUpperCase() + name.slice(1)}
           </a>
         ))}
@@ -57,32 +67,44 @@ const social: [string, string][] = Object.entries(
     )}
   </div>
 
-  <div class="container footer__legal">
-    <span>&copy; {new Date().getFullYear()} {churchName}{location && ` · ${location}`}</span>
-    <span class="footer__legal-links">
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
-    </span>
+  <div class="footer__bottom">
+    <div class="footer__bottom-inner container">
+      <span>&copy; {new Date().getFullYear()} {churchName}{location && ` · ${location}`}</span>
+      <div class="footer__legal">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Use</a>
+      </div>
+    </div>
   </div>
 </footer>
 
 <style>
-  .footer { background: var(--brand); color: rgba(255, 255, 255, 0.72); padding: 56px 0 24px; }
-  .footer__inner { display: flex; flex-wrap: wrap; gap: 48px; justify-content: space-between; }
-  .footer__brand { max-width: 280px; }
-  .footer__logo { height: 56px; width: auto; margin-bottom: 16px; }
+  .footer { background: var(--brand); color: rgba(255, 255, 255, 0.75); margin-top: auto; }
+  .footer__inner { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; padding-top: 56px; padding-bottom: 48px; }
+  .footer__logo { height: 40px; width: auto; margin-bottom: 18px; }
   .footer__wordmark { font-family: var(--font-heading); font-size: 28px; color: var(--white); margin-bottom: 12px; }
-  .footer__tagline { font-family: var(--font-heading); font-size: 19px; line-height: 1.5; }
-  .footer__col { display: flex; flex-direction: column; gap: 8px; }
-  .footer__line { font-size: 14px; color: rgba(255, 255, 255, 0.72); text-decoration: none; }
-  .footer__line:hover { color: var(--white); }
-  .footer__legal {
-    display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between;
-    margin-top: 40px; padding-top: 20px; font-size: 13px;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  .footer__tagline { font-family: var(--font-heading); font-size: 19px; font-style: italic; color: rgba(255, 255, 255, 0.65); line-height: 1.5; margin-bottom: 16px; }
+  .footer__info { font-size: 14px; line-height: 1.9; color: rgba(255, 255, 255, 0.72); }
+  .footer__info a { color: inherit; text-decoration: none; }
+  .footer__info a:hover { color: var(--white); }
+  .footer__col-title {
+    font-family: var(--font-display); font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px; color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 18px;
   }
-  .footer__legal-links { display: flex; gap: 16px; }
+  .footer__link { display: block; font-size: 14px; color: rgba(255, 255, 255, 0.8); margin-bottom: 12px; text-decoration: none; transition: color 0.15s; }
+  .footer__link:hover { color: var(--white); }
+  /* A semi-transparent overlay rather than a second hardcoded color, so the
+     bottom strip reads as "darker" against whatever --brand a church has
+     set, instead of a fixed shade tuned for one church's green. */
+  .footer__bottom { background: rgba(0, 0, 0, 0.18); padding: 18px 0; font-size: 13px; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.3px; }
+  .footer__bottom-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .footer__legal { display: flex; gap: 20px; }
+  .footer__legal a { color: rgba(255, 255, 255, 0.5); text-decoration: none; }
+  .footer__legal a:hover { color: var(--white); text-decoration: underline; }
   @media (max-width: 768px) {
-    .footer__inner { gap: 32px; }
+    .footer__inner { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .footer__brand { grid-column: 1 / -1; }
+    .footer__bottom-inner { justify-content: center; text-align: center; }
   }
 </style>
