@@ -35,6 +35,9 @@ Options
   --database-id=<id>  provision: reuse an existing D1 database
   --force             provision: overwrite existing wrangler.jsonc files
   --file=<path>       secrets: where to read credentials from
+  --init              secrets: write an annotated template to the file
+  --wizard            secrets: prompt for each credential, then offer to push
+  --status            secrets: list which secrets are actually live on the Worker
   --out=<dir>         brand: where to write the generated tokens
   --local             seed: target the local Docker database, not the deployed one
   --example           seed: also load the fictional starter pages and carousel
