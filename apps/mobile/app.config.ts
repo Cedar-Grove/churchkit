@@ -138,7 +138,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     extra: {
       churchName: brand.identity.name,
       shortName: brand.identity.shortName,
-      apiBaseUrl: brand.urls.api,
+      // brand.json's urls.api is the real, permanent production address —
+      // often still serving an old deployment right up until cutover. A
+      // build meant to test a new backend first needs to reach it without
+      // editing that file (and risking the edit surviving into a real
+      // production build afterward), hence the override.
+      apiBaseUrl: process.env.CHURCHKIT_API_BASE_OVERRIDE || brand.urls.api,
       websiteUrl: brand.urls.web,
       churchCenterUrl: brand.urls.churchCenter ?? null,
       givingUrl: brand.urls.giving ?? null,
