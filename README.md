@@ -52,9 +52,9 @@ Church-specific configuration lives in exactly three places, never in code:
 | API keys and routing addresses | Worker secrets, or environment variables |
 
 ```bash
-cp -r examples/example-church brands/my-church
+npx churchkit new my-church          # copies the example, sets the slug
 $EDITOR brands/my-church/brand.json
-npx churchkit brand my-church
+npx churchkit brand my-church        # regenerate tokens after an edit
 ```
 
 The generator validates as it goes — including WCAG contrast on the colour
@@ -74,7 +74,7 @@ That needs no accounts with anyone. To rehearse your own church — its name,
 colours and service times, with content you add in the local admin panel:
 
 ```bash
-cp -r examples/example-church brands/my-church
+npx churchkit new my-church
 $EDITOR brands/my-church/brand.json
 npx churchkit dev my-church --example
 ```

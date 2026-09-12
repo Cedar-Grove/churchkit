@@ -6,8 +6,10 @@ import { deploy } from './commands/deploy.mjs';
 import { dev } from './commands/dev.mjs';
 import { brand } from './commands/brand.mjs';
 import { seed } from './commands/seed.mjs';
+import { newChurch } from './commands/new.mjs';
 
 const COMMANDS = {
+	new: { run: newChurch, help: 'Start a new church from the example brand' },
 	provision: { run: provision, help: 'Create this church\'s Cloudflare resources and config' },
 	secrets: { run: secrets, help: 'Push credentials to the API worker from a local file' },
 	deploy: { run: deploy, help: 'Build and deploy api, web and admin' },

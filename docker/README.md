@@ -1,7 +1,7 @@
 # Local stack
 
 ```bash
-cp -r examples/example-church brands/my-church
+npx churchkit new my-church
 $EDITOR brands/my-church/brand.json
 npx churchkit dev my-church --example
 ```

@@ -10,6 +10,7 @@ npx churchkit provision my-church --dry-run
 
 | Command | Does |
 |---|---|
+| `new <slug>` | Start a new church from the example brand |
 | `provision <slug>` | Create the D1 database and R2 bucket, write Wrangler configs, apply the schema |
 | `secrets <slug>` | Push credentials to the API worker from a local file |
 | `deploy <slug>` | Regenerate brand tokens, then build and deploy api, web and admin |
@@ -18,8 +19,10 @@ npx churchkit provision my-church --dry-run
 | `brand <slug>` | Regenerate design tokens from that church's `brand.json` |
 | `seed <slug>` | Load that church's identity from `brand.json` into its database |
 
-A slug names a directory under `brands/` containing a `brand.json`. Start
-from `examples/example-church`.
+A slug names a directory under `brands/` containing a `brand.json`.
+`churchkit new` creates one from the example — prefer it to copying the
+directory by hand, which leaves the example's slug inside the copied file
+and sends the mobile build looking for assets that are not there.
 
 **`provision`, `secrets` and `deploy` target Cloudflare.** Running ChurchKit
 on your own server does not use them — see

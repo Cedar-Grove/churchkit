@@ -13,10 +13,11 @@ build/
 *.pem
 *.key
 
-# Per-deployment config belongs in your own private repo, not here
+# A church's own brand directory is its own — never committed here. The
+# directory itself is tracked (see brands/README.md) so a fresh clone has
+# somewhere to put one; everything inside it is ignored.
 tenants/
 brands/*/
-!brands/example-church/
 
 # OS / editor
 .DS_Store

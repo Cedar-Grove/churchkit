@@ -35,7 +35,7 @@ reports what a deployment can serve, and the website and app hide the rest.
 ```bash
 npm install
 
-cp -r examples/example-church brands/my-church
+npx churchkit new my-church
 $EDITOR brands/my-church/brand.json        # name, colours, fonts, URLs
 npx churchkit brand my-church
 
