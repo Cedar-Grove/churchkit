@@ -134,3 +134,65 @@ test('classifyDockerError does not guess at an unfamiliar failure', () => {
 	assert.equal(classifyDockerError(''), 'unknown');
 	assert.equal(classifyDockerError(undefined), 'unknown');
 });
+
+import { parseJsonc } from '../src/lib/render.mjs';
+
+test('parseJsonc keeps a URL that contains //', () => {
+	// The case a naive comment-stripper breaks: "https://x" becomes "https:".
+	const parsed = parseJsonc('{ "url": "https://example.org/a" } // trailing');
+	assert.equal(parsed.url, 'https://example.org/a');
+});
+
+test('parseJsonc strips line and block comments', () => {
+	const parsed = parseJsonc(`{
+		// a line comment
+		"a": 1, /* inline */ "b": 2
+		/* multi
+		   line */
+	}`);
+	assert.deepEqual(parsed, { a: 1, b: 2 });
+});
+
+test('parseJsonc allows a trailing comma', () => {
+	assert.deepEqual(parseJsonc('{ "a": [1, 2,], }'), { a: [1, 2] });
+});
+
+test('parseJsonc does not treat an escaped quote as ending a string', () => {
+	// The JSON text here is:  { "a": "say \"hi\" // not a comment" }
+	const jsonc = String.raw`{ "a": "say \"hi\" // not a comment" }`;
+	assert.equal(parseJsonc(jsonc).a, 'say "hi" // not a comment');
+});
+
+test('the deployment template names an entry point that exists', async () => {
+	// This drifted once: the Worker entry moved and the local config kept
+	// pointing at the old path, so every container start failed.
+	const { readFileSync, existsSync } = await import('node:fs');
+	const { resolve } = await import('node:path');
+	const { REPO_ROOT } = await import('../src/lib/paths.mjs');
+	const api = resolve(REPO_ROOT, 'apps/api');
+	const template = parseJsonc(readFileSync(resolve(api, 'wrangler.jsonc.example'), 'utf8'));
+	assert.ok(existsSync(resolve(api, template.main)), `${template.main} does not exist`);
+});
+
+import { localWranglerConfig } from '../src/commands/dev.mjs';
+
+test('the local wrangler config points at the real entry point and a local database', async () => {
+	const { readFileSync, existsSync } = await import('node:fs');
+	const { resolve } = await import('node:path');
+	const { REPO_ROOT } = await import('../src/lib/paths.mjs');
+
+	const api = resolve(REPO_ROOT, 'apps/api');
+	const template = parseJsonc(readFileSync(resolve(api, 'wrangler.jsonc.example'), 'utf8'));
+	const config = parseJsonc(localWranglerConfig({ slug: 'my-church', adminPort: '4322', template }));
+
+	assert.equal(config.main, template.main);
+	assert.ok(existsSync(resolve(api, config.main)), `${config.main} must exist`);
+
+	// It must never be able to reach a real deployment.
+	assert.equal(config.d1_databases[0].database_id, 'local');
+	assert.equal(config.d1_databases[0].database_name, 'my-church-db-local');
+	assert.ok(!('routes' in config), 'a local config must declare no routes');
+
+	// Admin CORS has to allow the browser origin the panel is served from.
+	assert.ok(config.vars.ADMIN_ALLOWED_ORIGINS.includes('http://localhost:4322'));
+});

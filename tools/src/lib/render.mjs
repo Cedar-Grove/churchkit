@@ -59,3 +59,43 @@ export function zoneOf(hostname) {
 	const parts = String(hostname).split('.');
 	return parts.length > 2 ? parts.slice(-2).join('.') : hostname;
 }
+
+/**
+ * Parse a .jsonc file — JSON with comments and trailing commas.
+ *
+ * String-aware, because the configs it reads contain URLs: a naive strip of
+ * everything after `//` would truncate "https://example.org" to "https:".
+ */
+export function parseJsonc(text) {
+	let out = '';
+	let inString = false;
+	let inLine = false;
+	let inBlock = false;
+
+	for (let i = 0; i < text.length; i++) {
+		const ch = text[i];
+		const next = text[i + 1];
+
+		if (inLine) {
+			if (ch === '\n') { inLine = false; out += ch; }
+			continue;
+		}
+		if (inBlock) {
+			if (ch === '*' && next === '/') { inBlock = false; i++; }
+			continue;
+		}
+		if (inString) {
+			out += ch;
+			if (ch === '\\') { out += next; i++; continue; }
+			if (ch === '"') inString = false;
+			continue;
+		}
+		if (ch === '"') { inString = true; out += ch; continue; }
+		if (ch === '/' && next === '/') { inLine = true; i++; continue; }
+		if (ch === '/' && next === '*') { inBlock = true; i++; continue; }
+		out += ch;
+	}
+
+	// Trailing commas, which jsonc allows and JSON.parse does not.
+	return JSON.parse(out.replace(/,(\s*[}\]])/g, '$1'));
+}
