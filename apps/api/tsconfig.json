@@ -4,7 +4,12 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"],
+    // Both hosts' types. The Worker entry and the shared router import no
+    // node: module — only src/platform/* and src/server.ts do, and those are
+    // never reached by the Workers build. Declared explicitly because the
+    // typecheck previously relied on @types/node arriving transitively, and
+    // silently broke when a dependency bump stopped supplying it.
+    "types": ["@cloudflare/workers-types", "node"],
     "strict": true,
     "noUnusedLocals": true,
     "noEmit": true,

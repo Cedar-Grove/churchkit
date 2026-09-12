@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
-  "description": "ChurchKit admin panel — Astro + React, behind Cloudflare Access.",
+  "description": "ChurchKit admin panel \u2014 Astro + React, behind Cloudflare Access.",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
@@ -12,9 +12,9 @@
     "deploy": "astro build && wrangler pages deploy dist"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^13.3.0",
-    "@astrojs/react": "^4.2.0",
-    "astro": "^6.2.1",
+    "@astrojs/cloudflare": "^14.3.1",
+    "@astrojs/react": "^6.0.5",
+    "astro": "^7.3.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

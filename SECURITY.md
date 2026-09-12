@@ -53,6 +53,34 @@ immediately with mitigation guidance.
   or access to the account hosting the deployment.
 - Missing hardening headers with no demonstrated impact.
 
+## Known dependency advisories
+
+`npm audit` currently reports findings, and they should not be a surprise to
+anyone reading this. What is actually true:
+
+**Nothing critical.** The two critical advisories this project once carried
+— an Astro XSS in server-rendered HTML, and a Vitest UI file-read — are
+fixed by the versions pinned here. The Astro one mattered: it affected
+markup this project renders for real visitors.
+
+**Almost everything remaining is the Expo toolchain.** `expo`, `metro`,
+`@expo/cli`, `image-size`, `xcode` and the rest come in through Expo SDK 54,
+and `npm audit` resolves all of them to a single fix: Expo SDK 57. That is a
+three-major-version upgrade of a React Native app, which needs testing on
+real devices before anyone should trust it — so it is not being done
+casually, and is tracked rather than hidden. Most of these packages are
+build tooling that never reaches a phone or a server.
+
+**One finding reaches the shipped app.** `decode-uri-component`, via
+`@react-navigation/core`, can be made to consume CPU on a malformed
+percent-encoded string. Reaching it means persuading someone to open a
+crafted deep link, and the result is an unresponsive app rather than data
+disclosure. `npm audit` reports no fix available: the upstream chain has not
+published one. React Navigation is already on v7 here, which is current.
+
+If you find something in this list is worse than described, that is exactly
+the kind of report this policy is for — please send it.
+
 ## For operators
 
 If you run a ChurchKit deployment, watch this repository's releases and
