@@ -10,7 +10,6 @@
       "distribution": "internal",
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
-        "ONESIGNAL_DISABLE_LOCATION": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -22,11 +21,11 @@
         "distribution": "store"
       },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "credentialsSource": "local"
       },
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
-        "ONESIGNAL_DISABLE_LOCATION": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
@@ -38,13 +37,11 @@
     },
     "production": {
       "channel": "production",
-      "autoIncrement": true,
       "android": {
         "credentialsSource": "local"
       },
       "env": {
         "EXPO_NO_CAPABILITY_SYNC": "1",
-        "ONESIGNAL_DISABLE_LOCATION": "true",
         "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }

@@ -39,6 +39,13 @@ interface Brand {
     iosBuildNumber?: string;
     androidVersionCode?: number;
     easProjectId?: string;
+    // A church migrating an existing Expo project carries its original EAS
+    // project's slug here too — EAS refuses to build when the config's
+    // `slug` doesn't match the slug the linked `easProjectId` was
+    // registered under, and that registered slug predates ChurchKit's
+    // brand-folder naming, so it isn't always the same string as `slug`
+    // above. Absent, this just falls back to the brand's own slug.
+    expoSlug?: string;
     updatesUrl?: string;
     onesignalAppId?: string;
     sentryDsn?: string;
@@ -76,7 +83,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   return {
     ...config,
     name: brand.identity.name,
-    slug: brand.slug,
+    slug: m.expoSlug ?? brand.slug,
     scheme: required(m.scheme, 'scheme'),
     version: m.version ?? '1.0.0',
     orientation: 'portrait',
@@ -128,7 +135,22 @@ export default ({ config }: ConfigContext): ExpoConfig => {
 
     plugins: [
       'expo-secure-store',
-      ...(m.onesignalAppId ? [['onesignal-expo-plugin', { mode: 'production' }] as any] : []),
+      [
+        'expo-build-properties',
+        {
+          android: {
+            enableMinifyInReleaseBuilds: true,
+            enableShrinkResourcesInReleaseBuilds: true,
+            // Sentry's bundled OpenTelemetry classes reference com.google.auto.value's
+            // annotations, which are compile-time-only and never on the runtime
+            // classpath. R8 treats that as a hard error once minification is on.
+            extraProguardRules: '-dontwarn com.google.auto.value.**',
+          },
+        },
+      ],
+      ...(m.onesignalAppId
+        ? [['onesignal-expo-plugin', { mode: 'production' }] as any]
+        : []),
       ...(m.sentryDsn ? ['@sentry/react-native/expo'] : []),
     ],
 
