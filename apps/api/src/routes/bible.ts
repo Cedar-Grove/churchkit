@@ -2,32 +2,43 @@ import type { Env } from '../types';
 import { err, json, CORS_HEADERS } from '../lib/response';
 import { fetchPassageText, isValidTranslation } from '../lib/bible';
 import { fetchEsvChapterAudio } from '../lib/bibleAudioSource';
+import type { AudioStyle, AudioQuality } from '../lib/bibleBrain';
 
-// Reading-plan narration only — always the real, dramatized ESV recording
-// from Bible Brain, regardless of which translation's text the app has
-// displayed. This is a live pass-through, not cached on our side: Bible
-// Brain's license restricts archiving/duplicating DBP Content beyond normal
+const AUDIO_STYLES: AudioStyle[] = ['dramatized', 'narrator'];
+const AUDIO_QUALITIES: AudioQuality[] = ['standard', 'dataSaver'];
+
+// Reading-plan narration only — always the real ESV recording from Bible
+// Brain, regardless of which translation's text the app has displayed.
+// style/quality pick which of Bible Brain's ESV filesets to serve (see
+// bibleBrain.ts); both default to what this endpoint always served before
+// the picker existed, so an app build that never sends them is unaffected.
+// This is a live pass-through, not cached on our side: Bible Brain's
+// license restricts archiving/duplicating DBP Content beyond normal
 // on-demand playback, so we never persist it to R2 or pre-warm it.
 export async function handleBibleAudio(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
 	const usfm = url.searchParams.get('usfm') ?? '';
 	const chapter = Number(url.searchParams.get('chapter'));
+	const style = (url.searchParams.get('style') ?? 'dramatized') as AudioStyle;
+	const quality = (url.searchParams.get('quality') ?? 'standard') as AudioQuality;
 
 	if (!usfm) return err('Missing usfm', 400);
 	if (!Number.isInteger(chapter) || chapter < 1) return err('Missing or invalid chapter', 400);
+	if (!AUDIO_STYLES.includes(style)) return err(`Invalid style: ${style}`, 400);
+	if (!AUDIO_QUALITIES.includes(quality)) return err(`Invalid quality: ${quality}`, 400);
 
-	let upstream: Response;
+	let upstream: { response: Response; contentType: string };
 	try {
-		upstream = await fetchEsvChapterAudio(usfm, chapter, env);
+		upstream = await fetchEsvChapterAudio(usfm, chapter, env, style, quality);
 	} catch (e: any) {
 		console.error('Bible audio: fetch failed:', e?.message);
 		return err(`Could not load audio: ${e?.message ?? 'unknown error'}`, 502);
 	}
 
-	return new Response(upstream.body, {
+	return new Response(upstream.response.body, {
 		headers: {
 			...CORS_HEADERS,
-			'Content-Type': 'audio/mpeg',
+			'Content-Type': upstream.contentType,
 			// Ordinary short-lived HTTP caching only, so a quick pause/resume or
 			// scrub doesn't re-fetch — not the indefinite archival copy this
 			// route used to keep in R2.

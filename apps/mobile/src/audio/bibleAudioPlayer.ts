@@ -53,14 +53,18 @@ export async function playReading(
   usfm: string,
   chapter: number,
   title: string,
+  style: 'dramatized' | 'narrator',
+  quality: 'standard' | 'dataSaver',
   onEnd: () => void
 ): Promise<void> {
   await ensureSetup();
   clearEndListener();
   await TrackPlayer.reset();
   await TrackPlayer.add({
-    id: `${usfm}-${chapter}`,
-    url: bibleAudioUrl(usfm, chapter),
+    // style/quality in the id too, so switching either while a reading is
+    // loaded (but paused) doesn't silently resume the stale audio.
+    id: `${usfm}-${chapter}-${style}-${quality}`,
+    url: bibleAudioUrl(usfm, chapter, style, quality),
     title,
     artist: 'Daily Bible Reading',
   });

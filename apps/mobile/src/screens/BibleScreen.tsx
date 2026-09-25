@@ -45,6 +45,23 @@ const TRANSLATIONS: { label: string; name: string }[] = [
 type TranslationLabel = string;
 const TRANSLATION_KEY = 'bible_translation';
 
+// ── Bible audio settings (narration style + download size) ───────────────────
+// Two independent choices, both Bible Brain filesets rather than anything we
+// transcode ourselves — see the API's bibleBrain.ts for the fileset IDs.
+type AudioStyle = 'dramatized' | 'narrator';
+type AudioQuality = 'standard' | 'dataSaver';
+
+const AUDIO_STYLES: { value: AudioStyle; label: string; hint: string }[] = [
+  { value: 'dramatized', label: 'Full Cast', hint: 'Multiple voice actors and music, like a radio drama' },
+  { value: 'narrator', label: 'Single Narrator', hint: 'One person reading, no music or sound effects' },
+];
+const AUDIO_QUALITIES: { value: AudioQuality; label: string; hint: string }[] = [
+  { value: 'standard', label: 'Standard', hint: 'Best sound, uses more data' },
+  { value: 'dataSaver', label: 'Data Saver', hint: 'Smaller download, sounds almost the same for speech' },
+];
+const AUDIO_STYLE_KEY = 'bible_audio_style';
+const AUDIO_QUALITY_KEY = 'bible_audio_quality';
+
 // ── Local Bible state (translation, auto-advance, reading progress) ──────────
 //
 // AsyncStorage, not SecureStore. SecureStore caps a value at 2048 bytes, and
@@ -399,6 +416,97 @@ function BibleLauncherModal({ visible, onClose, onSelect }: {
   );
 }
 
+// ── Audio Settings Dropdown ───────────────────────────────────────────────────
+// One button showing the current choice ("Full Cast · Standard"); tapping it
+// opens a modal with both option lists. Two separate settings, but one
+// control, so it reads as a single "audio settings" dropdown rather than two
+// competing controls crowded into the player row.
+
+function AudioSettingsModal({
+  visible, onClose, style, quality, onSelectStyle, onSelectQuality,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  style: AudioStyle;
+  quality: AudioQuality;
+  onSelectStyle: (s: AudioStyle) => void;
+  onSelectQuality: (q: AudioQuality) => void;
+}) {
+  return (
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <TouchableOpacity style={audioModalStyles.backdrop} activeOpacity={1} onPress={onClose}>
+        <TouchableOpacity activeOpacity={1} style={audioModalStyles.sheet} onPress={() => {}}>
+          <Text style={audioModalStyles.sheetTitle}>Audio Settings</Text>
+
+          <Text style={audioModalStyles.groupLabel}>Narration</Text>
+          {AUDIO_STYLES.map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={audioModalStyles.option}
+              onPress={() => onSelectStyle(opt.value)}
+            >
+              <Ionicons
+                name={style === opt.value ? 'radio-button-on' : 'radio-button-off'}
+                size={20}
+                color={style === opt.value ? Colors.gold : Colors.gray400}
+              />
+              <View style={audioModalStyles.optionText}>
+                <Text style={audioModalStyles.optionLabel}>{opt.label}</Text>
+                <Text style={audioModalStyles.optionHint}>{opt.hint}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+
+          <Text style={audioModalStyles.groupLabel}>Download Size</Text>
+          {AUDIO_QUALITIES.map(opt => (
+            <TouchableOpacity
+              key={opt.value}
+              style={audioModalStyles.option}
+              onPress={() => onSelectQuality(opt.value)}
+            >
+              <Ionicons
+                name={quality === opt.value ? 'radio-button-on' : 'radio-button-off'}
+                size={20}
+                color={quality === opt.value ? Colors.gold : Colors.gray400}
+              />
+              <View style={audioModalStyles.optionText}>
+                <Text style={audioModalStyles.optionLabel}>{opt.label}</Text>
+                <Text style={audioModalStyles.optionHint}>{opt.hint}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity style={audioModalStyles.doneBtn} onPress={onClose}>
+            <Text style={audioModalStyles.doneBtnText}>Done</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
+const audioModalStyles = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: Colors.white, borderTopLeftRadius: Radius.lg, borderTopRightRadius: Radius.lg,
+    padding: Spacing.md, paddingBottom: Spacing.xl,
+  },
+  sheetTitle: { fontFamily: Fonts.heading, fontSize: FontSizes.lg, color: Colors.cedar, marginBottom: Spacing.sm },
+  groupLabel: {
+    fontFamily: Fonts.bodyMedium, fontSize: FontSizes.xs, color: Colors.gray400,
+    textTransform: 'uppercase', letterSpacing: 0.5, marginTop: Spacing.md, marginBottom: 6,
+  },
+  option: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 8 },
+  optionText: { flex: 1 },
+  optionLabel: { fontFamily: Fonts.bodyMedium, fontSize: FontSizes.md, color: Colors.cedar },
+  optionHint: { fontFamily: Fonts.body, fontSize: FontSizes.xs, color: Colors.gray400, marginTop: 1 },
+  doneBtn: {
+    marginTop: Spacing.lg, backgroundColor: Colors.gold, borderRadius: Radius.md,
+    paddingVertical: 12, alignItems: 'center',
+  },
+  doneBtnText: { fontFamily: Fonts.bodyMedium, fontSize: FontSizes.md, color: Colors.cedar },
+});
+
 // ── Daily Reading + Listen Section ────────────────────────────────────────────
 
 const AUTO_ADVANCE_KEY = 'bible_auto_advance';
@@ -517,9 +625,15 @@ const planListStyles = StyleSheet.create({
 
 // ── Reading Day Detail (single reading per page, with its own player) ────────
 
-function ReadingDayDetailView({ date, translation, onBack }: {
+function ReadingDayDetailView({
+  date, translation, audioStyle, audioQuality, onChangeAudioStyle, onChangeAudioQuality, onBack,
+}: {
   date: Date;
   translation: TranslationLabel;
+  audioStyle: AudioStyle;
+  audioQuality: AudioQuality;
+  onChangeAudioStyle: (s: AudioStyle) => void;
+  onChangeAudioQuality: (q: AudioQuality) => void;
   onBack: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -535,6 +649,7 @@ function ReadingDayDetailView({ date, translation, onBack }: {
   const [panelLoading, setPanelLoading] = useState(false);
   const [panelError, setPanelError] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [audioSettingsVisible, setAudioSettingsVisible] = useState(false);
   const dateKey = date.toDateString();
 
   const textCache = useRef<Map<string, string>>(new Map());
@@ -576,6 +691,16 @@ function ReadingDayDetailView({ date, translation, onBack }: {
 
   // Stop playback if this page unmounts (back button, or picking another day).
   useEffect(() => () => { stopReading(); }, []);
+
+  // Changing style/quality mid-reading shouldn't silently resume the old
+  // audio when play is next pressed — force the next press to fetch fresh.
+  // No-op on mount: loadedIndexRef starts null, so nothing to stop yet.
+  useEffect(() => {
+    if (loadedIndexRef.current !== null) {
+      stopReading();
+      loadedIndexRef.current = null;
+    }
+  }, [audioStyle, audioQuality]);
 
   // Loading a page — on open, or via the prev/next arrows — only displays its
   // text. It never starts audio on its own; only the play button does that.
@@ -634,7 +759,7 @@ function ReadingDayDetailView({ date, translation, onBack }: {
     if (!page) return;
     setReadingIndex(i);
     loadedIndexRef.current = i;
-    playReading(page.usfm, page.chapter, pageLabel(page), () => {
+    playReading(page.usfm, page.chapter, pageLabel(page), audioStyle, audioQuality, () => {
       if (autoAdvanceRef.current && i < pages.length - 1) {
         playIndex(i + 1);
       } else {
@@ -674,7 +799,7 @@ function ReadingDayDetailView({ date, translation, onBack }: {
   useEffect(() => {
     setSkipHandlers({ next: () => skipReading(1), previous: () => skipReading(-1) });
     return () => setSkipHandlers({});
-  }, [readingIndex, pages.length]);
+  }, [readingIndex, pages.length, audioStyle, audioQuality]);
 
   const current = pages[readingIndex];
 
@@ -731,7 +856,15 @@ function ReadingDayDetailView({ date, translation, onBack }: {
             )}
           </TouchableOpacity>
           {/* Narration is always the ESV recording, regardless of the translation shown above. */}
-          <Text style={detailStyles.audioSourceLabel}>ESV audio</Text>
+          <TouchableOpacity
+            style={detailStyles.audioSettingsBtn}
+            onPress={() => setAudioSettingsVisible(true)}
+          >
+            <Text style={detailStyles.audioSourceLabel}>
+              ESV · {AUDIO_STYLES.find(s => s.value === audioStyle)?.label} · {AUDIO_QUALITIES.find(q => q.value === audioQuality)?.label}
+            </Text>
+            <Ionicons name="chevron-down" size={12} color={Colors.gray400} />
+          </TouchableOpacity>
         </View>
         <View style={detailStyles.autoToggle}>
           <Text style={detailStyles.autoToggleLabel}>Auto-advance</Text>
@@ -758,6 +891,15 @@ function ReadingDayDetailView({ date, translation, onBack }: {
           </>
         )}
       </ScrollView>
+
+      <AudioSettingsModal
+        visible={audioSettingsVisible}
+        onClose={() => setAudioSettingsVisible(false)}
+        style={audioStyle}
+        quality={audioQuality}
+        onSelectStyle={onChangeAudioStyle}
+        onSelectQuality={onChangeAudioQuality}
+      />
     </SafeAreaView>
   );
 }
@@ -795,6 +937,7 @@ const detailStyles = StyleSheet.create({
     backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center',
     ...Shadow.sm,
   },
+  audioSettingsBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   audioSourceLabel: { fontFamily: Fonts.body, fontSize: FontSizes.xs, color: Colors.gray400 },
   autoToggle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   autoToggleLabel: { fontFamily: Fonts.bodyMedium, fontSize: FontSizes.sm, color: Colors.gray600 },
@@ -818,6 +961,8 @@ export default function BibleScreen() {
   const [readerReading, setReaderReading] = useState<Reading | null>(null);
   const [launcherVisible, setLauncherVisible] = useState(false);
   const [translation, setTranslation] = useState<TranslationLabel>('NIV');
+  const [audioStyle, setAudioStyle] = useState<AudioStyle>('narrator');
+  const [audioQuality, setAudioQuality] = useState<AudioQuality>('standard');
 
   const activePlanYear = getActivePlanYear(new Date());
   const todaysSummary = getDayPlan(new Date()).passages.map(p => p.label).join(', ');
@@ -837,6 +982,26 @@ export default function BibleScreen() {
   function selectTranslation(label: TranslationLabel) {
     setTranslation(label);
     writeStored(TRANSLATION_KEY, label);
+  }
+
+  // Load saved audio settings
+  useEffect(() => {
+    readStored(AUDIO_STYLE_KEY).then(val => {
+      if (val && AUDIO_STYLES.some(s => s.value === val)) setAudioStyle(val as AudioStyle);
+    });
+    readStored(AUDIO_QUALITY_KEY).then(val => {
+      if (val && AUDIO_QUALITIES.some(q => q.value === val)) setAudioQuality(val as AudioQuality);
+    });
+  }, []);
+
+  function selectAudioStyle(value: AudioStyle) {
+    setAudioStyle(value);
+    writeStored(AUDIO_STYLE_KEY, value);
+  }
+
+  function selectAudioQuality(value: AudioQuality) {
+    setAudioQuality(value);
+    writeStored(AUDIO_QUALITY_KEY, value);
   }
 
   useEffect(() => {
@@ -869,6 +1034,10 @@ export default function BibleScreen() {
         key={selectedDate.toDateString()}
         date={selectedDate}
         translation={translation}
+        audioStyle={audioStyle}
+        audioQuality={audioQuality}
+        onChangeAudioStyle={selectAudioStyle}
+        onChangeAudioQuality={selectAudioQuality}
         onBack={() => setScreen('list')}
       />
     );

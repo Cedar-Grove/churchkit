@@ -13,8 +13,17 @@ export function sermonNotesUrl(planId: string): string {
 
 // Reading-plan narration is always the ESV recording, regardless of which
 // translation's text is displayed — see the API's handleBibleAudio.
-export function bibleAudioUrl(usfm: string, chapter: number): string {
-  return `${BASE_URL}/api/bible/audio?usfm=${encodeURIComponent(usfm)}&chapter=${chapter}`;
+// style/quality default server-side to 'dramatized'/'standard' when omitted.
+export function bibleAudioUrl(
+  usfm: string,
+  chapter: number,
+  style?: 'dramatized' | 'narrator',
+  quality?: 'standard' | 'dataSaver'
+): string {
+  let url = `${BASE_URL}/api/bible/audio?usfm=${encodeURIComponent(usfm)}&chapter=${chapter}`;
+  if (style) url += `&style=${style}`;
+  if (quality) url += `&quality=${quality}`;
+  return url;
 }
 
 // For translations not available from a client-side Bible API (e.g. ESV,
