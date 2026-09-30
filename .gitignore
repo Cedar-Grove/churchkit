@@ -49,6 +49,13 @@ apps/api/wrangler.local.jsonc
 .wrangler/
 
 # Logos and images written by `churchkit brand` from a church's own brand
-# directory. Generated, and a church's own — never committed here.
+# directory. Generated, and a church's own — never committed here. The one
+# exception: HomeScreen.tsx requires apps/mobile/assets/icon.png directly
+# (not through brand.json's assetDir), and EAS Build's upload step filters
+# by .gitignore — an icon that exists only on a developer's machine never
+# reaches the remote build, so its first bundle fails on that require. A
+# bare `apps/mobile/assets/` ignore blocks git from ever looking inside the
+# directory to honor that exception, so it needs the trailing `/*` below.
 apps/web/public/images/
-apps/mobile/assets/
+apps/mobile/assets/*
+!apps/mobile/assets/icon.png
