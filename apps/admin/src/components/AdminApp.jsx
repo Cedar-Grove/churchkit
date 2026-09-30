@@ -634,7 +634,7 @@ const HOME_TEXT_GROUPS = [
   ]},
 ];
 
-function HomepagePage({ toast }) {
+function HomepagePage({ toast, caps }) {
   const [slides, setSlides] = useState([]);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -826,9 +826,15 @@ function HomepagePage({ toast }) {
             <input style={inputStyle} value={form.button_link || ""} onChange={e => setForm(f => ({ ...f, button_link: e.target.value }))} />
           </Field>
           <Field label="Image">
-            <input type="file" accept="image/*" onChange={e => handleImageUpload(e.target.files[0])} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }} />
-            {uploading && <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888", marginTop: 6 }}>Uploading…</div>}
-            {imgPreview && !uploading && <img src={imgPreview} alt="" style={{ marginTop: 10, maxWidth: "100%", height: 140, objectFit: "cover", borderRadius: 8 }} />}
+            {caps.mediaUploads ? (
+              <>
+                <input type="file" accept="image/*" onChange={e => handleImageUpload(e.target.files[0])} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }} />
+                {uploading && <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888", marginTop: 6 }}>Uploading…</div>}
+                {imgPreview && !uploading && <img src={imgPreview} alt="" style={{ marginTop: 10, maxWidth: "100%", height: 140, objectFit: "cover", borderRadius: 8 }} />}
+              </>
+            ) : (
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>Configure media storage to enable image uploads.</div>
+            )}
           </Field>
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
             <button onClick={() => setModal(null)} style={btnSecondary}>Cancel</button>
@@ -843,7 +849,7 @@ function HomepagePage({ toast }) {
 // ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Staff
 // ════════════════════════════════════════════════════════════════════════════════
-function StaffPage({ toast }) {
+function StaffPage({ toast, caps }) {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
@@ -941,7 +947,11 @@ function StaffPage({ toast }) {
             <textarea style={{ ...inputStyle, height: 90, resize: "vertical" }} value={form.bio || ""} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} />
           </Field>
           <Field label="Photo">
-            <input type="file" accept="image/*" onChange={e => handlePhoto(e.target.files[0])} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }} />
+            {caps.mediaUploads ? (
+              <input type="file" accept="image/*" onChange={e => handlePhoto(e.target.files[0])} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }} />
+            ) : (
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>Configure media storage to enable photo uploads.</div>
+            )}
             {imgPreview && <img src={imgPreview} alt="" style={{ marginTop: 10, width: 80, height: 80, objectFit: "cover", borderRadius: "50%" }} />}
           </Field>
           <Field label="Active">
@@ -963,7 +973,7 @@ function StaffPage({ toast }) {
 // ════════════════════════════════════════════════════════════════════════════════
 // PAGE: Ministry Pages
 // ════════════════════════════════════════════════════════════════════════════════
-function PagesPage({ toast, siteUrl }) {
+function PagesPage({ toast, siteUrl, caps }) {
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -1160,7 +1170,11 @@ function PagesPage({ toast, siteUrl }) {
               </div>
             </Field>
             <Field label="Header Image">
-              <input type="file" accept="image/*" onChange={e => handleHeaderImage(e.target.files[0])} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }} />
+              {caps.mediaUploads ? (
+                <input type="file" accept="image/*" onChange={e => handleHeaderImage(e.target.files[0])} style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13 }} />
+              ) : (
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>Configure media storage to enable image uploads.</div>
+              )}
               {uploadingImg && <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#888", marginTop: 6 }}>Uploading…</div>}
               {imgPreview && !uploadingImg && (
                 <FocalPointPicker
@@ -1196,13 +1210,21 @@ function PagesPage({ toast, siteUrl }) {
                             <span style={{ fontSize: 22, color: "#ccc" }}>🖼</span>
                           )}
                         </div>
-                        <label style={{
-                          display: "block", marginTop: 6, textAlign: "center", fontSize: 12, fontFamily: "DM Sans, sans-serif",
-                          color: "var(--admin-brand)", cursor: "pointer", border: "1px solid var(--admin-brand)", borderRadius: 6, padding: "5px 0",
-                        }}>
-                          {url ? "Replace" : "Upload"}
-                          <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleGalleryImage(n, e.target.files[0])} />
-                        </label>
+                        {caps.mediaUploads ? (
+                          <label style={{
+                            display: "block", marginTop: 6, textAlign: "center", fontSize: 12, fontFamily: "DM Sans, sans-serif",
+                            color: "var(--admin-brand)", cursor: "pointer", border: "1px solid var(--admin-brand)", borderRadius: 6, padding: "5px 0",
+                          }}>
+                            {url ? "Replace" : "Upload"}
+                            <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleGalleryImage(n, e.target.files[0])} />
+                          </label>
+                        ) : (
+                          <div style={{
+                            marginTop: 6, textAlign: "center", fontSize: 11, fontFamily: "DM Sans, sans-serif", color: "#aaa",
+                          }}>
+                            Uploads unavailable
+                          </div>
+                        )}
                         {url && !uploading && (
                           <button onClick={() => removeGalleryImage(n)} style={{
                             width: "100%", marginTop: 4, background: "transparent", border: "none",
