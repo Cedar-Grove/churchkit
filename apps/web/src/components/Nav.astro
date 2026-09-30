@@ -2,7 +2,7 @@
 import { getSettings, getMinistries, getCapabilities } from '../lib/api';
 import { buildNav } from '../lib/nav';
 import { env } from '../lib/env';
-import { logoDark } from '../lib/logo';
+import { logoDark, logoIcon } from '../lib/logo';
 import { primarySundayTime, cityRegion } from '../lib/service-times';
 
 const [settings, ministries, capabilities] = await Promise.all([
@@ -21,6 +21,13 @@ const churchName: string = settings.church_name ?? '';
 const phone: string = settings.phone ?? '';
 const givingUrl: string = settings.giving_url ?? '';
 const logoSrc: string | null = settings.logo_dark_url || logoDark;
+// A stacked/portrait lockup (icon above wordmark) shrunk to nav-bar height
+// turns the wordmark into unreadable noise long before the icon looks
+// right. Where a church has supplied an icon-only mark, pair it with the
+// name as real text instead of forcing the full lockup down to that size.
+// Falls back to the old single-image behavior for every deployment that
+// hasn't supplied one.
+const iconSrc: string | null = logoIcon;
 
 const currentPath = Astro.url.pathname;
 const isActive = (href: string) =>
@@ -46,9 +53,14 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
 <header class="mast">
   <div class="container mast__inner">
     <a href="/" class="mast__logo" aria-label={`${churchName} — home`}>
-      {logoSrc
-        ? <img src={logoSrc} alt={churchName} width="1000" height="331" />
-        : <span class="mast__wordmark">{churchName}</span>}
+      {iconSrc
+        ? <>
+            <img src={iconSrc} alt="" width="512" height="512" class="mast__icon" />
+            <span class="mast__wordmark">{churchName}</span>
+          </>
+        : logoSrc
+          ? <img src={logoSrc} alt={churchName} width="1000" height="331" />
+          : <span class="mast__wordmark">{churchName}</span>}
     </a>
 
     <nav class="mast__nav" aria-label="Main">
@@ -122,7 +134,7 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
     --hdr-accent-deep: #a87c2e;
     --hdr-rule: #ddd7cb;
     --hdr-deep: #1c2a17;
-    --hdr-height: 96px;
+    --hdr-height: 100px;
   }
 
   .caps {
@@ -143,9 +155,10 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
 
   .mast { background: var(--surface); border-bottom: 1px solid var(--hdr-rule); position: sticky; top: 0; z-index: 100; }
   .mast__inner { height: var(--hdr-height); display: flex; align-items: center; justify-content: space-between; gap: 40px; }
-  .mast__logo { display: flex; align-items: center; flex-shrink: 0; }
+  .mast__logo { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
   .mast__logo img { height: 64px; width: auto; }
-  .mast__wordmark { font-family: var(--font-heading); font-size: 30px; color: var(--brand); white-space: nowrap; }
+  .mast__logo img.mast__icon { height: 56px; width: auto; }
+  .mast__wordmark { font-family: var(--font-heading); font-size: 26px; color: var(--brand); white-space: nowrap; }
 
   .mast__nav { display: flex; align-items: center; gap: 30px; }
   .mast__link {
@@ -238,8 +251,10 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
   @media (max-width: 768px) {
     .utility__hours { display: none; }
     .utility__inner { justify-content: center; }
-    .mast { --hdr-height: 60px; }
+    .mast { --hdr-height: 68px; }
     .mast__logo img { height: 40px; }
+    .mast__logo img.mast__icon { height: 36px; }
+    .mast__wordmark { font-size: 19px; }
   }
 </style>
 

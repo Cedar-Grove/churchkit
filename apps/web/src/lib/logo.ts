@@ -26,3 +26,12 @@ export const logoDark = find('logo-dark');
 
 /** White ink, for dark backgrounds. */
 export const logoWhite = find('logo-white');
+
+/**
+ * Icon-only mark (no wordmark), for places too narrow to render a full
+ * lockup at a legible size — a stacked/portrait lockup shrunk to nav-bar
+ * height turns its wordmark into unreadable noise long before the icon
+ * itself looks right. Null for a church that hasn't supplied one, which
+ * covers every deployment from before this existed.
+ */
+export const logoIcon = find('logo-icon');
