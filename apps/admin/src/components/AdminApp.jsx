@@ -121,7 +121,7 @@ function ToastStack({ toasts }) {
     <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", gap: 8 }}>
       {toasts.map(t => (
         <div key={t.id} style={{
-          background: t.type === "error" ? "#c0392b" : "#2d4a2b",
+          background: t.type === "error" ? "#c0392b" : "var(--admin-brand)",
           color: "#fff",
           padding: "12px 20px",
           borderRadius: 8,
@@ -151,7 +151,7 @@ function Modal({ title, onClose, children, wide }) {
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ background: "#fff", borderRadius: 12, padding: 32, width: "100%", maxWidth: wide ? 720 : 520, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.3)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "#2d4a2b", margin: 0 }}>{title}</h2>
+          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "var(--admin-brand)", margin: 0 }}>{title}</h2>
           <button onClick={onClose} style={{ border: "none", background: "none", fontSize: 22, cursor: "pointer", color: "#888", lineHeight: 1 }}>&times;</button>
         </div>
         {children}
@@ -180,24 +180,31 @@ const inputStyle = {
 };
 
 const btnPrimary = {
-  background: "#2d4a2b", color: "#fff", border: "none", padding: "10px 22px",
+  background: "var(--admin-brand)", color: "#fff", border: "none", padding: "10px 22px",
   borderRadius: 8, fontFamily: "DM Sans, sans-serif", fontWeight: 600,
   fontSize: 14, cursor: "pointer", transition: "background 0.2s",
 };
 
 const btnSecondary = {
-  background: "transparent", color: "#2d4a2b", border: "1.5px solid #2d4a2b",
+  background: "transparent", color: "var(--admin-brand)", border: "1.5px solid var(--admin-brand)",
   padding: "10px 22px", borderRadius: 8, fontFamily: "DM Sans, sans-serif",
   fontWeight: 600, fontSize: 14, cursor: "pointer",
 };
 
 const btnGold = {
-  background: "#b8924a", color: "#fff", border: "none", padding: "10px 22px",
+  background: "var(--admin-accent)", color: "#fff", border: "none", padding: "10px 22px",
   borderRadius: 8, fontFamily: "DM Sans, sans-serif", fontWeight: 600,
   fontSize: 14, cursor: "pointer",
 };
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
+// sermon-notes, notifications and mobile all exist to serve the mobile
+// app (sermon notes are read only by apps/mobile; device stats and push
+// have nothing to show without it) — caps.push is the only signal this
+// system has for "a mobile app is actually in use here", so all three
+// share that gate rather than each inventing its own.
+const APP_ONLY_PAGES = new Set(["sermon-notes", "notifications", "mobile"]);
+
 const NAV = [
   { id: "homepage", label: "Homepage", icon: "⌂" },
   { id: "staff", label: "Staff", icon: "👥" },
@@ -212,10 +219,10 @@ const NAV = [
 ];
 
 function Sidebar({ page, setPage, unread, user, onSignOut, churchName, caps }) {
-  const nav = NAV.filter(n => n.id !== "notifications" || caps.push);
+  const nav = NAV.filter(n => !APP_ONLY_PAGES.has(n.id) || caps.push);
   return (
     <aside style={{
-      width: 240, minHeight: "100vh", background: "#2d4a2b", display: "flex",
+      width: 240, minHeight: "100vh", background: "var(--admin-brand)", display: "flex",
       flexDirection: "column", position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 100,
     }}>
       <div style={{ padding: "28px 24px 20px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
@@ -231,8 +238,8 @@ function Sidebar({ page, setPage, unread, user, onSignOut, churchName, caps }) {
           <button key={n.id} onClick={() => setPage(n.id)} style={{
             display: "flex", alignItems: "center", gap: 12, width: "100%",
             padding: "11px 24px", border: "none", cursor: "pointer", textAlign: "left",
-            background: page === n.id ? "rgba(184,146,74,0.2)" : "transparent",
-            borderLeft: page === n.id ? "3px solid #b8924a" : "3px solid transparent",
+            background: page === n.id ? "color-mix(in srgb, var(--admin-accent) 20%, transparent)" : "transparent",
+            borderLeft: page === n.id ? "3px solid var(--admin-accent)" : "3px solid transparent",
             color: page === n.id ? "#faf8f3" : "rgba(255,255,255,0.65)",
             fontFamily: "DM Sans, sans-serif", fontSize: 14,
             transition: "all 0.15s",
@@ -240,7 +247,7 @@ function Sidebar({ page, setPage, unread, user, onSignOut, churchName, caps }) {
             <span style={{ fontSize: 16, opacity: 0.85 }}>{n.icon}</span>
             <span style={{ fontWeight: page === n.id ? 600 : 400 }}>{n.label}</span>
             {n.id === "submissions" && unread > 0 && (
-              <span style={{ marginLeft: "auto", background: "#b8924a", color: "#fff", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{unread}</span>
+              <span style={{ marginLeft: "auto", background: "var(--admin-accent)", color: "#fff", borderRadius: 10, padding: "1px 8px", fontSize: 11, fontWeight: 700 }}>{unread}</span>
             )}
           </button>
         ))}
@@ -263,7 +270,7 @@ function TopBar({ title, actions }) {
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "0 32px", position: "sticky", top: 0, zIndex: 50,
     }}>
-      <h1 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "#2d4a2b", margin: 0 }}>{title}</h1>
+      <h1 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "var(--admin-brand)", margin: 0 }}>{title}</h1>
       <div style={{ display: "flex", gap: 10 }}>{actions}</div>
     </div>
   );
@@ -288,7 +295,7 @@ function ErrorMsg({ msg }) {
 }
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
-function Badge({ label, color = "#e8f5e9", text = "#2d4a2b" }) {
+function Badge({ label, color = "#e8f5e9", text = "var(--admin-brand)" }) {
   return (
     <span style={{
       background: color, color: text, padding: "3px 10px", borderRadius: 12,
@@ -321,8 +328,8 @@ function FocalPointPicker({ src, x, y, onChange }) {
         <div style={{
           position: "absolute", left: `${fx}%`, top: `${fy}%`, width: 22, height: 22,
           marginLeft: -11, marginTop: -11, borderRadius: "50%",
-          border: "2.5px solid #fff", background: "rgba(184,146,74,0.85)",
-          boxShadow: "0 0 0 1.5px #2d4a2b, 0 2px 8px rgba(0,0,0,0.45)",
+          border: "2.5px solid #fff", background: "color-mix(in srgb, var(--admin-accent) 85%, transparent)",
+          boxShadow: "0 0 0 1.5px var(--admin-brand), 0 2px 8px rgba(0,0,0,0.45)",
           pointerEvents: "none",
         }} />
       </div>
@@ -406,7 +413,7 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
     const node = document.createElement("input");
     node.className = "blank-field";
     node.placeholder = "answer";
-    node.style.cssText = "border:none;border-bottom:2px solid #2d4a2b;outline:none;width:120px;background:transparent;font-size:inherit;font-family:inherit;padding:2px 4px;";
+    node.style.cssText = "border:none;border-bottom:2px solid var(--admin-brand);outline:none;width:120px;background:transparent;font-size:inherit;font-family:inherit;padding:2px 4px;";
     const sel = window.getSelection();
     if (sel.rangeCount) {
       const range = sel.getRangeAt(0);
@@ -420,12 +427,12 @@ function WYSIWYGEditor({ value, onChange, sermonsMode, toast }) {
     if (!ref) return;
     const text = prompt("Verse text:");
     if (!text) return;
-    exec("insertHTML", `<blockquote style="border-left:4px solid #b8924a;padding:12px 20px;margin:16px 0;background:#faf8f0;font-family:Source Serif 4,serif;font-style:italic;color:#444"><strong style="font-style:normal;color:#2d4a2b;font-family:DM Sans,sans-serif;font-size:13px">${ref}</strong><br><br>${text}</blockquote>`);
+    exec("insertHTML", `<blockquote style="border-left:4px solid var(--admin-accent);padding:12px 20px;margin:16px 0;background:#faf8f0;font-family:Source Serif 4,serif;font-style:italic;color:#444"><strong style="font-style:normal;color:var(--admin-brand);font-family:DM Sans,sans-serif;font-size:13px">${ref}</strong><br><br>${text}</blockquote>`);
     onChange(editorRef.current.innerHTML);
   }
 
   function insertMainPoint() {
-    exec("insertHTML", `<div style="border-left:5px solid #2d4a2b;padding:14px 20px;margin:16px 0;background:#f0f5f0;font-weight:600;color:#2d4a2b;font-family:DM Sans,sans-serif">Main Point: </div>`);
+    exec("insertHTML", `<div style="border-left:5px solid var(--admin-brand);padding:14px 20px;margin:16px 0;background:#f0f5f0;font-weight:600;color:var(--admin-brand);font-family:DM Sans,sans-serif">Main Point: </div>`);
     onChange(editorRef.current.innerHTML);
   }
 
@@ -735,7 +742,7 @@ function HomepagePage({ toast }) {
         {/* Carousel */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "#2d4a2b", margin: 0 }}>Carousel Slides</h2>
+            <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "var(--admin-brand)", margin: 0 }}>Carousel Slides</h2>
             <button onClick={() => openEdit(null)} style={btnPrimary}>+ Add Slide</button>
           </div>
           {slides.length === 0 && <div style={{ color: "#aaa", fontFamily: "DM Sans, sans-serif", fontSize: 14, padding: "20px 0" }}>No slides yet.</div>}
@@ -759,18 +766,18 @@ function HomepagePage({ toast }) {
 
         {/* Featured Event */}
         <div>
-          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "#2d4a2b", margin: "0 0 16px" }}>Featured Event</h2>
+          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "var(--admin-brand)", margin: "0 0 16px" }}>Featured Event</h2>
           {events.length === 0 && <div style={{ color: "#aaa", fontFamily: "DM Sans, sans-serif", fontSize: 14 }}>No upcoming events found.</div>}
           {events.map(ev => (
             <div key={ev.id} onClick={() => setFeatured(ev.id)} style={{
               background: featuredId === ev.id ? "#f0f7ef" : "#fff",
-              border: featuredId === ev.id ? "1.5px solid #2d4a2b" : "1px solid #e8e4dd",
+              border: featuredId === ev.id ? "1.5px solid var(--admin-brand)" : "1px solid #e8e4dd",
               borderRadius: 10, padding: "14px 18px", marginBottom: 10, cursor: "pointer",
               fontFamily: "DM Sans, sans-serif", transition: "all 0.15s",
             }}>
               <div style={{ fontWeight: 600, fontSize: 14, color: "#222" }}>{ev.name}</div>
               <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>{fmtDate(ev.starts_at)}</div>
-              {featuredId === ev.id && <div style={{ fontSize: 12, color: "#2d4a2b", fontWeight: 600, marginTop: 4 }}>★ Currently Featured</div>}
+              {featuredId === ev.id && <div style={{ fontSize: 12, color: "var(--admin-brand)", fontWeight: 600, marginTop: 4 }}>★ Currently Featured</div>}
             </div>
           ))}
         </div>
@@ -784,10 +791,10 @@ function HomepagePage({ toast }) {
         working homepage.
       */}
       <div style={{ marginTop: 32 }}>
-        <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "#2d4a2b", margin: "0 0 16px" }}>Homepage Text</h2>
+        <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "var(--admin-brand)", margin: "0 0 16px" }}>Homepage Text</h2>
         {HOME_TEXT_GROUPS.map(group => (
           <div key={group.title} style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 24, marginBottom: 16 }}>
-            <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 15, color: "#2d4a2b", margin: "0 0 16px", paddingBottom: 10, borderBottom: "1px solid #f0ece4" }}>{group.title}</h3>
+            <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 15, color: "var(--admin-brand)", margin: "0 0 16px", paddingBottom: 10, borderBottom: "1px solid #f0ece4" }}>{group.title}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               {group.fields.map(([label, key, fallback, multiline]) => (
                 <Field key={key} label={label} style={multiline ? { gridColumn: "span 2" } : undefined}>
@@ -903,7 +910,7 @@ function StaffPage({ toast }) {
                 ? <img src={m.photo_url} alt={m.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 : <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, color: "#ccc" }}>👤</div>
               }
-              <div style={{ position: "absolute", inset: 0, background: "rgba(45,74,43,0.85)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s" }}
+              <div style={{ position: "absolute", inset: 0, background: "color-mix(in srgb, var(--admin-brand) 85%, transparent)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.opacity = 1}
                 onMouseLeave={e => e.currentTarget.style.opacity = 0}>
                 <span style={{ color: "#fff", fontFamily: "DM Sans, sans-serif", fontSize: 13, fontWeight: 600 }}>Change Photo</span>
@@ -1102,7 +1109,7 @@ function PagesPage({ toast, siteUrl }) {
       <div style={{ padding: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
           <button onClick={() => setEditing(null)} style={{ ...btnSecondary, padding: "7px 14px", fontSize: 13 }}>← Back</button>
-          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 20, color: "#2d4a2b", margin: 0 }}>{editing.title || editing.slug}</h2>
+          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 20, color: "var(--admin-brand)", margin: 0 }}>{editing.title || editing.slug}</h2>
           <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "DM Sans, sans-serif", fontSize: 14, color: "#444" }}>
               <input type="checkbox" checked={editing.published} onChange={e => setEditing(ed => ({ ...ed, published: e.target.checked }))} />
@@ -1191,7 +1198,7 @@ function PagesPage({ toast, siteUrl }) {
                         </div>
                         <label style={{
                           display: "block", marginTop: 6, textAlign: "center", fontSize: 12, fontFamily: "DM Sans, sans-serif",
-                          color: "#2d4a2b", cursor: "pointer", border: "1px solid #2d4a2b", borderRadius: 6, padding: "5px 0",
+                          color: "var(--admin-brand)", cursor: "pointer", border: "1px solid var(--admin-brand)", borderRadius: 6, padding: "5px 0",
                         }}>
                           {url ? "Replace" : "Upload"}
                           <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleGalleryImage(n, e.target.files[0])} />
@@ -1238,7 +1245,7 @@ function PagesPage({ toast, siteUrl }) {
               <div style={{ fontSize: 15, fontWeight: 600, color: "#222" }}>{pg.title || pg.slug}</div>
               <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>/{pg.slug}</div>
             </div>
-            {pg.status === "draft" && <Badge label="Draft" color="#fff5e6" text="#b8924a" />}
+            {pg.status === "draft" && <Badge label="Draft" color="#fff5e6" text="var(--admin-accent)" />}
             <div style={{ display: "flex", gap: 10, marginLeft: 16 }}>
               <button onClick={() => openEditor(pg.slug)} style={{ ...btnSecondary, padding: "7px 18px", fontSize: 13 }}>Edit</button>
               <button onClick={() => setDeleteTarget(pg.slug)} style={{ border: "1px solid #fcc", background: "#fff", color: "#c0392b", padding: "7px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "DM Sans, sans-serif" }}>Delete</button>
@@ -1321,7 +1328,7 @@ function SermonNotesPage({ toast }) {
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
             <button onClick={() => setEditing(null)} style={{ ...btnSecondary, padding: "7px 14px", fontSize: 13 }}>← Back</button>
             <div style={{ flex: 1 }}>
-              <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "#2d4a2b", margin: 0 }}>{editing.title}</h2>
+              <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "var(--admin-brand)", margin: 0 }}>{editing.title}</h2>
               <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>{fmtDate(editing.date)}</div>
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "DM Sans, sans-serif", fontSize: 14, color: "#444" }}>
@@ -1339,7 +1346,7 @@ function SermonNotesPage({ toast }) {
             boxShadow: "0 8px 30px rgba(0,0,0,0.3)", margin: "0 auto",
           }}>
             <div style={{ background: "#fff", borderRadius: 26, overflow: "hidden", height: 480 }}>
-              <div style={{ background: "#2d4a2b", padding: "12px 16px" }}>
+              <div style={{ background: "var(--admin-brand)", padding: "12px 16px" }}>
                 <div style={{ fontFamily: "Playfair Display, serif", fontSize: 13, color: "#fff" }}>{editing.title}</div>
                 <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{fmtDate(editing.date)}</div>
               </div>
@@ -1409,12 +1416,12 @@ function NotificationsPage({ toast }) {
   }
 
   const statusColor = s => s === "sent" ? "#e8f5e9" : s === "scheduled" ? "#fff5e6" : "#f5f5f5";
-  const statusText = s => s === "sent" ? "#2d4a2b" : s === "scheduled" ? "#b8924a" : "#888";
+  const statusText = s => s === "sent" ? "var(--admin-brand)" : s === "scheduled" ? "var(--admin-accent)" : "#888";
 
   return (
     <div style={{ padding: 32, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
       <div>
-        <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "#2d4a2b", margin: "0 0 20px" }}>New Notification</h2>
+        <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "var(--admin-brand)", margin: "0 0 20px" }}>New Notification</h2>
         <Field label={`Title (${form.title.length}/65)`} required>
           <input style={inputStyle} maxLength={65} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
         </Field>
@@ -1456,9 +1463,9 @@ function NotificationsPage({ toast }) {
 
       <div>
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 24, marginBottom: 24 }}>
-          <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "#2d4a2b", margin: "0 0 16px" }}>Preview</h3>
+          <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "var(--admin-brand)", margin: "0 0 16px" }}>Preview</h3>
           <div style={{ background: "#f0ece4", borderRadius: 12, padding: "14px 16px", display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <div style={{ width: 36, height: 36, background: "#2d4a2b", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, background: "var(--admin-brand)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ fontSize: 16 }}>✝</span>
             </div>
             <div style={{ fontFamily: "DM Sans, sans-serif" }}>
@@ -1468,7 +1475,7 @@ function NotificationsPage({ toast }) {
           </div>
         </div>
 
-        <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "#2d4a2b", margin: "0 0 12px" }}>Notification History</h3>
+        <h3 style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "var(--admin-brand)", margin: "0 0 12px" }}>Notification History</h3>
         {history.length === 0 && <div style={{ color: "#aaa", fontFamily: "DM Sans, sans-serif", fontSize: 14 }}>No notifications sent yet.</div>}
         {history.map((n, i) => (
           <div key={i} style={{ background: "#fff", border: "1px solid #e8e4dd", borderRadius: 10, padding: "14px 18px", marginBottom: 10 }}>
@@ -1642,7 +1649,7 @@ function SubmissionsPage({ toast }) {
           {tabs.map(t => (
             <button key={t} onClick={() => setFilter(t)} style={{
               padding: "7px 16px", borderRadius: 6, border: "none", cursor: "pointer",
-              background: filter === t ? "#2d4a2b" : "transparent",
+              background: filter === t ? "var(--admin-brand)" : "transparent",
               color: filter === t ? "#fff" : "#555",
               fontFamily: "DM Sans, sans-serif", fontSize: 13, fontWeight: filter === t ? 600 : 400,
             }}>{FORM_TYPE_LABELS[t] || t}</button>
@@ -1686,7 +1693,7 @@ function SubmissionsPage({ toast }) {
             <DetailField
               label="Planning Center"
               value={selected.pco_person_id
-                ? <a href={`https://people.planningcenteronline.com/people/${selected.pco_person_id}`} target="_blank" rel="noreferrer" style={{ color: "#2d4a2b" }}>View profile</a>
+                ? <a href={`https://people.planningcenteronline.com/people/${selected.pco_person_id}`} target="_blank" rel="noreferrer" style={{ color: "var(--admin-brand)" }}>View profile</a>
                 : "Not synced"}
             />
             <DetailField label="Staff Emailed" value={selected.emailed ? "Yes" : "No"} />
@@ -1731,7 +1738,7 @@ function SendTestButton({ playerId, toast }) {
       disabled={sending}
       style={{
         padding: "5px 12px", borderRadius: 6, border: "1px solid #d8d2c4",
-        background: "#fff", color: "#2d4a2b", fontFamily: "DM Sans, sans-serif",
+        background: "#fff", color: "var(--admin-brand)", fontFamily: "DM Sans, sans-serif",
         fontSize: 12, fontWeight: 600, cursor: sending ? "default" : "pointer",
         opacity: sending ? 0.6 : 1,
       }}
@@ -1762,7 +1769,7 @@ function MobileAppPage({ toast, settings }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const statCard = (label, value, icon, color = "#2d4a2b") => (
+  const statCard = (label, value, icon, color = "var(--admin-brand)") => (
     <div style={{
       background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd",
       padding: "24px 28px", display: "flex", alignItems: "center", gap: 20,
@@ -1785,14 +1792,14 @@ function MobileAppPage({ toast, settings }) {
   return (
     <div style={{ padding: 32, maxWidth: 900 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, marginBottom: 32 }}>
-        {statCard("Total Devices", stats?.total, "📱", "#2d4a2b")}
+        {statCard("Total Devices", stats?.total, "📱", "var(--admin-brand)")}
         {statCard("iOS Devices", stats?.ios, "🍎", "#555")}
         {statCard("Android Devices", stats?.android, "🤖", "#3ddc84")}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 28 }}>
-          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "#2d4a2b", margin: "0 0 20px", paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>App Configuration</h2>
+          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "var(--admin-brand)", margin: "0 0 20px", paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>App Configuration</h2>
           {/*
             Only what this deployment can actually know. Bundle IDs and EAS
             project names live in the church's own build config, not here,
@@ -1811,10 +1818,10 @@ function MobileAppPage({ toast, settings }) {
         </div>
 
         <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 28 }}>
-          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "#2d4a2b", margin: "0 0 20px", paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>Deep Link Reference</h2>
+          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "var(--admin-brand)", margin: "0 0 20px", paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>Deep Link Reference</h2>
           {DEEP_LINKS.map(link => (
             <div key={link} style={{ padding: "10px 0", borderBottom: "1px solid #f7f5f0" }}>
-              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, fontWeight: 600, color: "#2d4a2b", marginBottom: 3 }}>
+              <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, fontWeight: 600, color: "var(--admin-brand)", marginBottom: 3 }}>
                 <code style={{ background: "#f0f7ef", padding: "2px 8px", borderRadius: 4, fontSize: 12 }}>{link}</code>
               </div>
               <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 12, color: "#888", marginTop: 4 }}>
@@ -1827,7 +1834,7 @@ function MobileAppPage({ toast, settings }) {
 
       <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", overflow: "hidden" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid #f0ece4" }}>
-          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "#2d4a2b", margin: 0 }}>Recently Registered Devices</h2>
+          <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "var(--admin-brand)", margin: 0 }}>Recently Registered Devices</h2>
         </div>
         {loading ? (
           <Loading />
@@ -1887,7 +1894,7 @@ function HealthCard({ check }) {
   return (
     <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: "20px 24px", marginBottom: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-        <div style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "#2d4a2b" }}>{check.name}</div>
+        <div style={{ fontFamily: "Playfair Display, serif", fontSize: 16, color: "var(--admin-brand)" }}>{check.name}</div>
         <Badge label={label} color={color} text={text} />
       </div>
       <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888", marginTop: 8, lineHeight: 1.5 }}>{check.detail}</div>
@@ -1987,7 +1994,7 @@ function PdfUploadField({ label, value, onChange, toast }) {
       />
       {uploading && <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888", marginTop: 6 }}>Uploading…</div>}
       {value && !uploading && (
-        <a href={value} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 8, fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#2d4a2b" }}>
+        <a href={value} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginTop: 8, fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "var(--admin-brand)" }}>
           View current PDF ↗
         </a>
       )}
@@ -2039,7 +2046,7 @@ function LogoUploadField({ label, value, onChange, toast }) {
 function SettingsSection({ title, children }) {
   return (
     <div style={{ background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 28, marginBottom: 24 }}>
-      <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "#2d4a2b", margin: "0 0 20px", paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>{title}</h2>
+      <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 17, color: "var(--admin-brand)", margin: "0 0 20px", paddingBottom: 12, borderBottom: "1px solid #f0ece4" }}>{title}</h2>
       {children}
     </div>
   );
@@ -2174,7 +2181,7 @@ function SettingsPage({ toast, caps }) {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <input
                   type="color"
-                  value={settings[k] || "#2d4a2b"}
+                  value={settings[k] || "var(--admin-brand)"}
                   onChange={e => set(k, e.target.value)}
                   style={{ width: 44, height: 36, padding: 2, border: "1.5px solid #ddd", borderRadius: 6, cursor: "pointer" }}
                 />
@@ -2190,8 +2197,8 @@ function SettingsPage({ toast, caps }) {
             </select>
           </Field>
           <div style={{ gridColumn: "span 2", display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", background: "#faf8f3", borderRadius: 8, border: "1px solid #e8e4dd" }}>
-            <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_primary_color || "#2d4a2b", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Primary" />
-            <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_accent_color || "#b8924a", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Accent" />
+            <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_primary_color || "var(--admin-brand)", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Primary" />
+            <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_accent_color || "var(--admin-accent)", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Accent" />
             <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#666" }}>
               {(FONT_PAIRINGS.find(([id]) => id === (settings.theme_font_pairing || "classic")) || [])[1]}
               {" — fonts load from Google Fonts on the live site, not previewed here."}
@@ -2588,6 +2595,15 @@ export default function App() {
   const churchName = settings.church_name || "";
   const siteUrl = settings.site_url || "";
 
+  // The panel's own chrome (sidebar, active states, headings) is styled
+  // with these two custom properties throughout instead of a hardcoded
+  // green/gold, so a church's admin panel actually looks like its site —
+  // same theme_primary_color/theme_accent_color settings the Branding
+  // section already writes to. Defaults match what this file used to
+  // hardcode everywhere, so an unconfigured deployment looks unchanged.
+  const primaryColor = settings.theme_primary_color || "var(--admin-brand)";
+  const accentColor = settings.theme_accent_color || "var(--admin-accent)";
+
   // What this deployment can actually do, so the panel doesn't offer
   // settings for integrations that have no credentials behind them.
   const [caps, setCaps] = useState({});
@@ -2623,7 +2639,7 @@ export default function App() {
   // button — send the panel somewhere real rather than rendering a page for
   // a capability that just went away (or was never there this session).
   useEffect(() => {
-    if (page === "notifications" && !caps.push) setPage("homepage");
+    if (APP_ONLY_PAGES.has(page) && !caps.push) setPage("homepage");
   }, [page, caps.push]);
 
   const renderPage = () => {
@@ -2632,10 +2648,10 @@ export default function App() {
       case "homepage": return <HomepagePage {...props} />;
       case "staff": return <StaffPage {...props} />;
       case "pages": return <PagesPage {...props} />;
-      case "sermon-notes": return <SermonNotesPage {...props} />;
+      case "sermon-notes": return caps.push ? <SermonNotesPage {...props} /> : <HomepagePage {...props} />;
       case "notifications": return caps.push ? <NotificationsPage {...props} /> : <HomepagePage {...props} />;
       case "submissions": return <SubmissionsPage {...props} />;
-      case "mobile": return <MobileAppPage {...props} />;
+      case "mobile": return caps.push ? <MobileAppPage {...props} /> : <HomepagePage {...props} />;
       case "navigation": return <NavigationPage {...props} />;
       case "health": return <HealthPage {...props} />;
       case "settings": return <SettingsPage {...props} />;
@@ -2647,15 +2663,20 @@ export default function App() {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
+        /* Set once here (not as an inline style further down) so every
+           component in this file can use var(--admin-brand/--admin-accent)
+           regardless of where it sits in the tree — including ToastStack,
+           which renders as a sibling of the main layout, not a descendant. */
+        :root { --admin-brand: ${primaryColor}; --admin-accent: ${accentColor}; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #faf8f3; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        input:focus, textarea:focus, select:focus { border-color: #2d4a2b !important; box-shadow: 0 0 0 3px rgba(45,74,43,0.1); }
+        input:focus, textarea:focus, select:focus { border-color: var(--admin-brand) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-brand) 10%, transparent); }
         button:hover { opacity: 0.9; }
-        [contenteditable] h1 { font-family: Playfair Display, serif; font-size: 28px; color: #2d4a2b; margin: 16px 0 8px; }
-        [contenteditable] h2 { font-family: Playfair Display, serif; font-size: 22px; color: #2d4a2b; margin: 14px 0 6px; }
+        [contenteditable] h1 { font-family: Playfair Display, serif; font-size: 28px; color: var(--admin-brand); margin: 16px 0 8px; }
+        [contenteditable] h2 { font-family: Playfair Display, serif; font-size: 22px; color: var(--admin-brand); margin: 14px 0 6px; }
         [contenteditable] h3 { font-family: DM Sans, sans-serif; font-size: 16px; font-weight: 700; color: #333; margin: 12px 0 4px; }
-        [contenteditable] blockquote { border-left: 3px solid #b8924a; padding: 10px 16px; margin: 12px 0; color: #555; font-style: italic; }
+        [contenteditable] blockquote { border-left: 3px solid var(--admin-accent); padding: 10px 16px; margin: 12px 0; color: #555; font-style: italic; }
         [contenteditable] ul, [contenteditable] ol { padding-left: 24px; margin: 8px 0; }
         [contenteditable] p { margin: 6px 0; }
       `}</style>
