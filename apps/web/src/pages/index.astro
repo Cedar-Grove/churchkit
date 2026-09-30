@@ -217,31 +217,33 @@ const text = {
     </section>
   )}
 
-  <section class="section pillars">
-    <div class="container">
-      <div class="pillars__header">
-        <p class="section__eyebrow">{text.visionEyebrow}</p>
-        <h2 class="section__heading">{text.visionHeading}</h2>
+  {settings.home_vision_heading && (
+    <section class="section pillars">
+      <div class="container">
+        <div class="pillars__header">
+          <p class="section__eyebrow">{text.visionEyebrow}</p>
+          <h2 class="section__heading">{text.visionHeading}</h2>
+        </div>
+        <div class="pillars__grid">
+          <a href="/about" class="pillar">
+            <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M7.5 8.2h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3 class="pillar__title">{text.pillar1Title}</h3>
+            <p class="pillar__body">{text.pillar1Body}</p>
+          </a>
+          <a href="/about" class="pillar">
+            <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 11.5a3.1 3.1 0 100-6.2 3.1 3.1 0 000 6.2zM3.4 19.2c0-3.1 2.5-5.3 5.6-5.3s5.6 2.2 5.6 5.3M15.8 6.1a3.1 3.1 0 010 5.9M17.1 14.4c2.1.6 3.5 2.4 3.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3 class="pillar__title">{text.pillar2Title}</h3>
+            <p class="pillar__body">{text.pillar2Body}</p>
+          </a>
+          <a href="/about" class="pillar">
+            <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20.6a8.6 8.6 0 100-17.2 8.6 8.6 0 000 17.2zM3.4 12h17.2M12 3.4c2.2 2.4 3.4 5.4 3.4 8.6s-1.2 6.2-3.4 8.6c-2.2-2.4-3.4-5.4-3.4-8.6S9.8 5.8 12 3.4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3 class="pillar__title">{text.pillar3Title}</h3>
+            <p class="pillar__body">{text.pillar3Body}</p>
+          </a>
+        </div>
       </div>
-      <div class="pillars__grid">
-        <a href="/about" class="pillar">
-          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M7.5 8.2h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">{text.pillar1Title}</h3>
-          <p class="pillar__body">{text.pillar1Body}</p>
-        </a>
-        <a href="/about" class="pillar">
-          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 11.5a3.1 3.1 0 100-6.2 3.1 3.1 0 000 6.2zM3.4 19.2c0-3.1 2.5-5.3 5.6-5.3s5.6 2.2 5.6 5.3M15.8 6.1a3.1 3.1 0 010 5.9M17.1 14.4c2.1.6 3.5 2.4 3.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">{text.pillar2Title}</h3>
-          <p class="pillar__body">{text.pillar2Body}</p>
-        </a>
-        <a href="/about" class="pillar">
-          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20.6a8.6 8.6 0 100-17.2 8.6 8.6 0 000 17.2zM3.4 12h17.2M12 3.4c2.2 2.4 3.4 5.4 3.4 8.6s-1.2 6.2-3.4 8.6c-2.2-2.4-3.4-5.4-3.4-8.6S9.8 5.8 12 3.4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">{text.pillar3Title}</h3>
-          <p class="pillar__body">{text.pillar3Body}</p>
-        </a>
-      </div>
-    </div>
-  </section>
+    </section>
+  )}
 
   {upcomingEvents.length > 0 && (
     <section class="section events-preview">
