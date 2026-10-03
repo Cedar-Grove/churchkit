@@ -3,11 +3,12 @@ interface Props {
   settings: any;
   serviceDays: [string, string[]][];
   text: Record<string, string>;
+  theme: string;
 }
-const { settings, serviceDays, text } = Astro.props;
+const { settings, serviceDays, text, theme } = Astro.props;
 ---
 
-<section class="section info-strip">
+<section class={`section info-strip info-strip--${theme}`} data-theme={theme}>
   <div class="container">
     <div class="info-strip__grid">
       <div class="info-block" hidden={serviceDays.length === 0}>
@@ -25,7 +26,7 @@ const { settings, serviceDays, text } = Astro.props;
           </div>
         ))}
         <div class="info-block__actions">
-          <a href="/im-new" class="btn btn--primary">{text.gatheringCta}</a>
+          <a href="/im-new" class="info-block__btn">{text.gatheringCta}</a>
         </div>
       </div>
       <div class="info-block">
@@ -37,7 +38,7 @@ const { settings, serviceDays, text } = Astro.props;
         </div>
         <div class="info-block__actions">
           {settings.address && (
-            <a href={`https://maps.google.com/?q=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener" class="btn btn--outline">{text.findUsCta}</a>
+            <a href={`https://maps.google.com/?q=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener" class="info-block__btn info-block__btn--outline">{text.findUsCta}</a>
           )}
         </div>
       </div>
@@ -45,9 +46,9 @@ const { settings, serviceDays, text } = Astro.props;
         <h3 class="info-block__title">{text.connectHeading}</h3>
         <p class="info-block__connect-body">{text.connectBody}</p>
         <div class="info-block__actions">
-          <a href="/connect-card" class="btn btn--primary">{text.connectCta1}</a>
-          <a href="/im-new" class="btn btn--outline">{text.connectCta2}</a>
-          <a href="/prayer-request" class="btn btn--outline">{text.connectCta3}</a>
+          <a href="/connect-card" class="info-block__btn">{text.connectCta1}</a>
+          <a href="/im-new" class="info-block__btn info-block__btn--outline">{text.connectCta2}</a>
+          <a href="/prayer-request" class="info-block__btn info-block__btn--outline">{text.connectCta3}</a>
         </div>
       </div>
     </div>
@@ -55,6 +56,7 @@ const { settings, serviceDays, text } = Astro.props;
 </section>
 
 <style>
+  /* ── classic: faint brand band, plain text columns ── */
   .info-strip { background: var(--brand-faint); }
   .info-strip__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
   .info-block { display: flex; flex-direction: column; }
@@ -65,8 +67,46 @@ const { settings, serviceDays, text } = Astro.props;
   .info-block__address { font-size: 20px; color: var(--ink-soft); line-height: 1.8; }
   .info-block__connect-body { font-size: 20px; color: var(--ink-soft); line-height: 1.8; }
   .info-block__actions { margin-top: auto; padding-top: 20px; display: flex; flex-direction: column; gap: 12px; }
-  .info-block .btn { display: flex; justify-content: center; }
+  .info-block__btn { display: flex; justify-content: center; align-items: center; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 700; text-decoration: none; background: var(--brand); color: var(--white); transition: all 0.2s; }
+  .info-block__btn:hover { background: var(--brand-mid); }
+  .info-block__btn--outline { background: transparent; color: var(--brand); border: 2px solid var(--brand); }
+  .info-block__btn--outline:hover { background: rgba(0,0,0,0.03); }
+
+  /* ── editorial: white bg, thin rule, more air ── */
+  .info-strip--editorial { background: var(--white); padding: 100px 0; border-top: 1px solid var(--border); }
+  .info-strip--editorial .info-strip__grid { gap: 60px; }
+  .info-block--editorial .info-block__title { font-weight: 400; }
+  .info-strip--editorial .info-block__btn { background: none; color: var(--brand); border-radius: 0; border-bottom: 2px solid var(--accent); padding: 6px 0; justify-content: flex-start; }
+  .info-strip--editorial .info-block__btn--outline { border: none; border-bottom: 2px solid var(--border); color: var(--ink-soft); }
+
+  /* ── bold: solid brand band, inverted white text ── */
+  .info-strip--bold { background: var(--brand); }
+  .info-strip--bold .info-block__title { color: white; text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-strip--bold .info-block__day { color: var(--accent); }
+  .info-strip--bold .info-block__time,
+  .info-strip--bold .info-block__address,
+  .info-strip--bold .info-block__connect-body { color: rgba(255,255,255,0.82); }
+  .info-strip--bold .info-block__btn { background: var(--accent); color: var(--ink); border-radius: 2px; }
+  .info-strip--bold .info-block__btn--outline { border-radius: 2px; border-color: rgba(255,255,255,0.5); color: white; }
+
+  /* ── minimal: plain white, no tint, smaller type ── */
+  .info-strip--minimal { background: var(--surface); padding: 120px 0; }
+  .info-strip--minimal .info-block__title { font-size: 24px; font-weight: 500; }
+  .info-strip--minimal .info-block__time,
+  .info-strip--minimal .info-block__address,
+  .info-strip--minimal .info-block__connect-body { font-size: 16px; }
+  .info-strip--minimal .info-block__btn { background: none; color: var(--brand); border-radius: 0; border-bottom: 1px solid var(--border); padding: 6px 0; justify-content: flex-start; }
+  .info-strip--minimal .info-block__btn--outline { border: none; border-bottom: 1px solid var(--border); color: var(--ink-faint); }
+
+  /* ── visitor-first: elevated card, dense, prominent button ── */
+  .info-strip--visitor-first { background: var(--surface); padding: 0; margin-top: -48px; position: relative; z-index: 5; }
+  .info-strip--visitor-first .container { background: var(--white); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); padding: 40px; border: 1px solid var(--border); }
+  .info-strip--visitor-first .info-strip__grid { gap: 28px; }
+  .info-strip--visitor-first .info-block__title { font-size: 24px; margin-bottom: 14px; }
+  .info-strip--visitor-first .info-block__btn { padding: 14px 20px; font-size: 15px; }
+
   @media (max-width: 900px) {
     .info-strip__grid { grid-template-columns: 1fr; gap: 32px; }
+    .info-strip--visitor-first .container { padding: 28px 20px; }
   }
 </style>

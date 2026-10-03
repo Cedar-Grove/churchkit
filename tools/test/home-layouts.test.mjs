@@ -27,7 +27,7 @@ test('classic exists and is the fallback for an unset or unknown value', () => {
 });
 
 test('resolveHomeLayout returns the named layout when it exists', () => {
-	assert.equal(resolveHomeLayout('events-first'), HOME_LAYOUTS['events-first']);
+	assert.equal(resolveHomeLayout('bold'), HOME_LAYOUTS.bold);
 });
 
 test('there are at least 5 layouts to choose between', () => {

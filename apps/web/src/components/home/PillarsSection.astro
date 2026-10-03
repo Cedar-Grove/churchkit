@@ -2,47 +2,89 @@
 interface Props {
   settings: any;
   text: Record<string, string>;
+  theme: string;
 }
-const { settings, text } = Astro.props;
+const { settings, text, theme } = Astro.props;
+const pillars = [
+  { title: text.pillar1Title, body: text.pillar1Body, icon: 'M12 3v18M7.5 8.2h9' },
+  { title: text.pillar2Title, body: text.pillar2Body, icon: 'M9 11.5a3.1 3.1 0 100-6.2 3.1 3.1 0 000 6.2zM3.4 19.2c0-3.1 2.5-5.3 5.6-5.3s5.6 2.2 5.6 5.3M15.8 6.1a3.1 3.1 0 010 5.9M17.1 14.4c2.1.6 3.5 2.4 3.5 4.8' },
+  { title: text.pillar3Title, body: text.pillar3Body, icon: 'M12 20.6a8.6 8.6 0 100-17.2 8.6 8.6 0 000 17.2zM3.4 12h17.2M12 3.4c2.2 2.4 3.4 5.4 3.4 8.6s-1.2 6.2-3.4 8.6c-2.2-2.4-3.4-5.4-3.4-8.6S9.8 5.8 12 3.4z' },
+];
 ---
 
 {settings.home_vision_heading && (
-  <section class="section pillars">
+  <section class={`section pillars pillars--${theme}`} data-theme={theme}>
     <div class="container">
       <div class="pillars__header">
         <p class="section__eyebrow">{text.visionEyebrow}</p>
         <h2 class="section__heading">{text.visionHeading}</h2>
       </div>
       <div class="pillars__grid">
-        <a href="/about" class="pillar">
-          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M7.5 8.2h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">{text.pillar1Title}</h3>
-          <p class="pillar__body">{text.pillar1Body}</p>
-        </a>
-        <a href="/about" class="pillar">
-          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 11.5a3.1 3.1 0 100-6.2 3.1 3.1 0 000 6.2zM3.4 19.2c0-3.1 2.5-5.3 5.6-5.3s5.6 2.2 5.6 5.3M15.8 6.1a3.1 3.1 0 010 5.9M17.1 14.4c2.1.6 3.5 2.4 3.5 4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">{text.pillar2Title}</h3>
-          <p class="pillar__body">{text.pillar2Body}</p>
-        </a>
-        <a href="/about" class="pillar">
-          <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 20.6a8.6 8.6 0 100-17.2 8.6 8.6 0 000 17.2zM3.4 12h17.2M12 3.4c2.2 2.4 3.4 5.4 3.4 8.6s-1.2 6.2-3.4 8.6c-2.2-2.4-3.4-5.4-3.4-8.6S9.8 5.8 12 3.4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <h3 class="pillar__title">{text.pillar3Title}</h3>
-          <p class="pillar__body">{text.pillar3Body}</p>
-        </a>
+        {pillars.map((p, i) => (
+          <a href="/about" class="pillar">
+            <span class="pillar__number">{String(i + 1).padStart(2, '0')}</span>
+            <div class="pillar__icon"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={p.icon} stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3 class="pillar__title">{p.title}</h3>
+            <p class="pillar__body">{p.body}</p>
+          </a>
+        ))}
       </div>
     </div>
   </section>
 )}
 
 <style>
+  /* ── classic: bordered rounded cards on a faint band ── */
   .pillars { background: var(--brand-faint); }
   .pillars__header { text-align: center; max-width: 560px; margin: 0 auto 48px; }
   .pillars__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-  .pillar { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 36px 28px; text-align: center; text-decoration: none; transition: all 0.2s; }
+  .pillar { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 36px 28px; text-align: center; text-decoration: none; transition: all 0.2s; position: relative; }
   .pillar:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: var(--brand-light); }
+  .pillar__number { display: none; }
   .pillar__icon { color: var(--brand-mid); margin-bottom: 16px; display: flex; justify-content: center; }
   .pillar__title { font-family: var(--font-heading); font-size: 31px; color: var(--brand); font-weight: 600; margin-bottom: 12px; }
   .pillar__body { font-family: var(--font-heading); font-size: 20px; color: var(--ink-soft); line-height: 1.7; font-weight: 300; }
+
+  /* ── editorial: no cards, numbered list, generous whitespace ── */
+  .pillars--editorial { background: var(--white); padding: 100px 0; }
+  .pillars--editorial .pillars__grid { gap: 0; border-top: 1px solid var(--border); }
+  .pillars--editorial .pillar { border: none; border-bottom: 1px solid var(--border); border-radius: 0; text-align: left; padding: 40px 0; display: flex; align-items: flex-start; gap: 24px; }
+  .pillars--editorial .pillar:hover { box-shadow: none; transform: none; }
+  .pillars--editorial .pillar__number { display: block; font-family: var(--font-heading); font-size: 15px; color: var(--accent); font-weight: 600; padding-top: 6px; flex-shrink: 0; }
+  .pillars--editorial .pillar__icon { display: none; }
+  .pillars--editorial .pillar__title { font-weight: 400; margin-bottom: 8px; }
+
+  /* ── bold: solid color blocks, inverted text, sharp corners ── */
+  .pillars--bold { background: var(--white); }
+  .pillars--bold .pillar { border-radius: 2px; border: none; padding: 40px 28px; }
+  .pillars--bold .pillar:nth-child(odd) { background: var(--brand); }
+  .pillars--bold .pillar:nth-child(even) { background: var(--accent); }
+  .pillars--bold .pillar:nth-child(odd) .pillar__title,
+  .pillars--bold .pillar:nth-child(odd) .pillar__body { color: white; }
+  .pillars--bold .pillar:nth-child(even) .pillar__title,
+  .pillars--bold .pillar:nth-child(even) .pillar__body { color: var(--ink); }
+  .pillars--bold .pillar:nth-child(odd) .pillar__icon { color: var(--accent); }
+  .pillars--bold .pillar:nth-child(even) .pillar__icon { color: var(--brand); }
+  .pillars--bold .pillar:hover { transform: none; box-shadow: none; filter: brightness(1.05); }
+  .pillars--bold .pillar__title { text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── minimal: plain text columns, thin top rule, no card ── */
+  .pillars--minimal { background: var(--surface); padding: 120px 0; }
+  .pillars--minimal .pillars__grid { gap: 48px; border-top: 1px solid var(--border); padding-top: 48px; }
+  .pillars--minimal .pillar { border: none; padding: 0; text-align: left; }
+  .pillars--minimal .pillar:hover { transform: none; box-shadow: none; }
+  .pillars--minimal .pillar__number { display: block; font-size: 13px; color: var(--ink-faint); margin-bottom: 12px; font-weight: 600; }
+  .pillars--minimal .pillar__icon { display: none; }
+  .pillars--minimal .pillar__title { font-weight: 500; font-size: 24px; }
+  .pillars--minimal .pillar__body { font-weight: 300; font-size: 17px; }
+
+  /* ── visitor-first: compact cards, smaller padding ── */
+  .pillars--visitor-first { padding: 48px 0; }
+  .pillars--visitor-first .pillar { padding: 24px 20px; }
+  .pillars--visitor-first .pillar__icon svg { width: 26px; height: 26px; }
+  .pillars--visitor-first .pillar__title { font-size: 24px; margin-bottom: 8px; }
+  .pillars--visitor-first .pillar__body { font-size: 17px; }
+
   @media (max-width: 900px) {
     .pillars__grid { grid-template-columns: 1fr; }
   }

@@ -1,20 +1,26 @@
 /**
- * Homepage section orders a church can choose between, shared by apps/web
+ * Homepage visual themes a church can choose between, shared by apps/web
  * (which renders them) and apps/admin (which offers them in a <select>).
  *
  * Same pattern as font-presets.mjs: one definition, so the admin picker and
- * the site can never disagree about what a layout id means. The hero banner
- * and the footer frame every layout and are never reordered — what moves is
- * which content comes first after the hero, which is what actually changes
- * a visitor's first impression of the church (events-forward vs.
- * sermon-forward vs. "here's how to visit us" forward, etc.).
+ * the site can never disagree about what a theme id means.
  *
- * A section id with no data to show renders nothing wherever it falls in
- * the order — moving `events-preview` to the top does not invent events,
- * it just means an empty slot there until some exist.
+ * A theme changes *structure* — hero height and alignment, whether a
+ * section is a bordered card or a flat divided row, button shape, how much
+ * whitespace a section gets, which sections are solid-color bands — never
+ * color. Every theme reads the same --brand/--accent/--ink/--surface/...
+ * custom properties admin's Branding section controls, so switching themes
+ * never changes a church's configured colors, only how they're applied.
+ * See apps/web/src/components/home/*.astro, each of which has one CSS
+ * variant per theme id in its own <style> block.
+ *
+ * `sections` additionally varies which of the five content blocks (after
+ * the featured-event/latest-sermon/pillars/events-preview/info-strip set)
+ * comes first — a structural choice, same as the rest of what a theme
+ * controls. The hero and footer are never reordered.
  */
 
-/** Every id a layout's `sections` array may use, and what it is. */
+/** Every id a theme's `sections` array may use, and what it is. */
 export const HOME_SECTIONS = {
 	'featured-event': 'Featured event strip',
 	'latest-sermon': 'Latest sermon',
@@ -26,28 +32,28 @@ export const HOME_SECTIONS = {
 export const HOME_LAYOUTS = {
 	classic: {
 		name: 'Classic',
-		description: 'Featured event, then the latest sermon, vision, upcoming events, and gathering info last.',
+		description: 'Split hero, bordered rounded cards, soft alternating backgrounds — the original design.',
 		sections: ['featured-event', 'latest-sermon', 'pillars', 'events-preview', 'info-strip'],
 	},
-	'events-first': {
-		name: 'Events First',
-		description: 'Leads with what is happening next — events and the featured one come right after the hero.',
+	editorial: {
+		name: 'Editorial',
+		description: 'Full-bleed magazine feel: no card borders, flat divided rows, generous whitespace, serif-forward.',
+		sections: ['featured-event', 'latest-sermon', 'pillars', 'events-preview', 'info-strip'],
+	},
+	bold: {
+		name: 'Bold',
+		description: 'High-contrast solid color bands, sharp corners, uppercase tracked type, centered tall hero.',
 		sections: ['featured-event', 'events-preview', 'pillars', 'latest-sermon', 'info-strip'],
 	},
-	'sermon-first': {
-		name: 'Sermon First',
-		description: 'Puts the latest message front and center, for a church whose homepage is mostly about the preaching.',
-		sections: ['latest-sermon', 'featured-event', 'pillars', 'events-preview', 'info-strip'],
+	minimal: {
+		name: 'Minimal',
+		description: 'Quiet and airy: short hero, no card backgrounds, hairline dividers, understated text-link buttons.',
+		sections: ['pillars', 'latest-sermon', 'featured-event', 'events-preview', 'info-strip'],
 	},
 	'visitor-first': {
 		name: 'Visitor First',
-		description: 'Gathering times, address and how to connect appear immediately after the hero — built for a first-time visitor deciding whether to come.',
+		description: 'Compact banner hero with an elevated "plan your visit" card right beneath it — built for a first-time visitor deciding whether to come.',
 		sections: ['info-strip', 'featured-event', 'pillars', 'latest-sermon', 'events-preview'],
-	},
-	'community-first': {
-		name: 'Community First',
-		description: 'Opens with the vision and pillars before anything else — identity first, logistics last.',
-		sections: ['pillars', 'featured-event', 'events-preview', 'latest-sermon', 'info-strip'],
 	},
 };
 

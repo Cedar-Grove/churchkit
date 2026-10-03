@@ -5,8 +5,9 @@ interface Props {
   latestSermonWithVideo: any;
   text: Record<string, string>;
   formats: any;
+  theme: string;
 }
-const { latestSermonWithVideo, text, formats } = Astro.props;
+const { latestSermonWithVideo, text, formats, theme } = Astro.props;
 
 function shortDate(dateStr: string) {
   return formatDate(new Date(dateStr), formats, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -14,7 +15,7 @@ function shortDate(dateStr: string) {
 ---
 
 {latestSermonWithVideo && (
-  <section class="section latest-sermon">
+  <section class={`section latest-sermon latest-sermon--${theme}`} data-theme={theme}>
     <div class="container">
       <div class="latest-sermon__inner">
         <div class="latest-sermon__text">
@@ -23,8 +24,8 @@ function shortDate(dateStr: string) {
           {latestSermonWithVideo.series_title && <p class="latest-sermon__series">{latestSermonWithVideo.series_title}</p>}
           <p class="latest-sermon__date">{shortDate(latestSermonWithVideo.date)}</p>
           <div class="latest-sermon__actions">
-            <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="btn btn--primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> {text.sermonCtaWatch}</a>
-            <a href="/media" class="btn btn--outline">{text.sermonCtaBrowse}</a>
+            <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="latest-sermon__btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> {text.sermonCtaWatch}</a>
+            <a href="/media" class="latest-sermon__btn latest-sermon__btn--secondary">{text.sermonCtaBrowse}</a>
           </div>
         </div>
         <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="latest-sermon__thumb">
@@ -40,11 +41,16 @@ function shortDate(dateStr: string) {
 )}
 
 <style>
+  /* ── classic: 2-col grid, pill buttons, rounded thumb ── */
   .latest-sermon { background: var(--white); }
   .latest-sermon__inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
   .latest-sermon__series { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
   .latest-sermon__date { font-size: 13px; color: var(--ink-faint); margin-bottom: 24px; }
   .latest-sermon__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .latest-sermon__btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: 700; text-decoration: none; letter-spacing: 0.5px; background: var(--brand); color: var(--white); transition: all 0.2s; }
+  .latest-sermon__btn:hover { background: var(--brand-mid); transform: translateY(-1px); }
+  .latest-sermon__btn--secondary { background: transparent; color: var(--brand); border: 2px solid var(--brand); }
+  .latest-sermon__btn--secondary:hover { background: var(--brand-faint); }
   .latest-sermon__thumb { position: relative; aspect-ratio: 16/10; border-radius: 16px; overflow: hidden; display: block; background: var(--brand); cursor: pointer; }
   .latest-sermon__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
   .latest-sermon__thumb:hover img { transform: scale(1.04); }
@@ -52,6 +58,38 @@ function shortDate(dateStr: string) {
   .latest-sermon__play-btn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); transition: background 0.2s; }
   .latest-sermon__thumb:hover .latest-sermon__play-btn { background: rgba(0,0,0,0.35); }
   .latest-sermon__play-btn::after { content: ''; width: 56px; height: 56px; background: rgba(255,255,255,0.92); border-radius: 50%; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 14 14'%3E%3Cpath d='M3.6 2.3L11.4 7L3.6 11.7V2.3Z' fill='%23273920'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+
+  /* ── editorial: single column, thumb inset small top, flat ── */
+  .latest-sermon--editorial .latest-sermon__inner { grid-template-columns: 1fr; max-width: 680px; margin: 0 auto; text-align: center; }
+  .latest-sermon--editorial .latest-sermon__thumb { order: -1; margin-bottom: 36px; border-radius: 0; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .latest-sermon--editorial .section__heading { font-weight: 400; }
+  .latest-sermon--editorial .latest-sermon__series { font-style: italic; font-weight: 400; text-transform: none; letter-spacing: 0; font-family: var(--font-heading); font-size: 18px; }
+  .latest-sermon--editorial .latest-sermon__actions { justify-content: center; }
+  .latest-sermon--editorial .latest-sermon__btn { background: none; color: var(--brand); border-radius: 0; border-bottom: 2px solid var(--accent); padding: 8px 0; }
+  .latest-sermon--editorial .latest-sermon__btn--secondary { border: none; border-bottom: 2px solid var(--border); color: var(--ink-soft); }
+
+  /* ── bold: solid brand band, inverted text, sharp thumb ── */
+  .latest-sermon--bold { background: var(--brand); }
+  .latest-sermon--bold .section__eyebrow { color: rgba(255,255,255,0.6); }
+  .latest-sermon--bold .section__heading { color: white; text-transform: uppercase; }
+  .latest-sermon--bold .latest-sermon__series { color: var(--accent); }
+  .latest-sermon--bold .latest-sermon__date { color: rgba(255,255,255,0.6); }
+  .latest-sermon--bold .latest-sermon__thumb { border-radius: 2px; }
+  .latest-sermon--bold .latest-sermon__btn { background: var(--accent); color: var(--ink); border-radius: 2px; }
+  .latest-sermon--bold .latest-sermon__btn--secondary { border-radius: 2px; border-color: rgba(255,255,255,0.4); color: white; }
+
+  /* ── minimal: lighter weight, smaller thumb, quiet links ── */
+  .latest-sermon--minimal .latest-sermon__inner { gap: 40px; }
+  .latest-sermon--minimal .section__heading { font-weight: 500; font-size: 42px; }
+  .latest-sermon--minimal .latest-sermon__thumb { border-radius: 4px; }
+  .latest-sermon--minimal .latest-sermon__btn { background: none; color: var(--brand); padding: 4px 0; border-radius: 0; border-bottom: 1px solid var(--border); font-weight: 500; letter-spacing: 0; }
+  .latest-sermon--minimal .latest-sermon__btn--secondary { border: none; border-bottom: 1px solid var(--border); color: var(--ink-faint); }
+
+  /* ── visitor-first: compact, smaller gap ── */
+  .latest-sermon--visitor-first { padding: 48px 0; }
+  .latest-sermon--visitor-first .latest-sermon__inner { gap: 32px; }
+  .latest-sermon--visitor-first .latest-sermon__thumb { border-radius: 10px; }
+
   @media (max-width: 900px) {
     .latest-sermon__inner { grid-template-columns: 1fr; }
     .latest-sermon__thumb { order: -1; }

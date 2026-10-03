@@ -5,8 +5,9 @@ interface Props {
   upcomingEvents: any[];
   text: Record<string, string>;
   formats: any;
+  theme: string;
 }
-const { upcomingEvents, text, formats } = Astro.props;
+const { upcomingEvents, text, formats, theme } = Astro.props;
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -24,14 +25,14 @@ function formatEventDate(dateStr: string) {
 ---
 
 {upcomingEvents.length > 0 && (
-  <section class="section events-preview">
+  <section class={`section events-preview events-preview--${theme}`} data-theme={theme}>
     <div class="container">
       <div class="events-preview__header">
         <div>
           <p class="section__eyebrow">{text.eventsEyebrow}</p>
           <h2 class="section__heading">{text.eventsHeading}</h2>
         </div>
-        <a href="/events" class="btn btn--outline">{text.eventsCta}</a>
+        <a href="/events" class="events-preview__cta">{text.eventsCta}</a>
       </div>
       <div class="events-preview__grid">
         {upcomingEvents.map((event: any) => {
@@ -64,8 +65,11 @@ function formatEventDate(dateStr: string) {
 )}
 
 <style>
+  /* ── classic: bordered rounded cards, date box, pill button ── */
   .events-preview { background: white; }
   .events-preview__header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+  .events-preview__cta { font-size: 14px; font-weight: 700; color: var(--brand); border: 2px solid var(--brand); border-radius: 30px; padding: 10px 22px; text-decoration: none; transition: all 0.2s; }
+  .events-preview__cta:hover { background: var(--brand-faint); }
   .events-preview__grid { display: flex; flex-direction: column; gap: 14px; }
   .event-card { display: flex; align-items: center; gap: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; transition: all 0.2s; }
   .event-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); border-color: var(--brand-light); }
@@ -79,6 +83,46 @@ function formatEventDate(dateStr: string) {
   .event-card__btn { background: var(--brand); color: white; padding: 9px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0; text-decoration: none; transition: background 0.15s; }
   .event-card__btn:hover { background: var(--brand-mid); }
   .event-card__btn--muted { background: var(--brand-faint); color: var(--brand-mid); cursor: default; }
+
+  /* ── editorial: flat divided list, no card bg, inline date ── */
+  .events-preview--editorial { padding: 100px 0; }
+  .events-preview--editorial .events-preview__grid { gap: 0; border-top: 1px solid var(--border); }
+  .events-preview--editorial .event-card { background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 28px 0; }
+  .events-preview--editorial .event-card:hover { box-shadow: none; }
+  .events-preview--editorial .event-card__date { background: none; border: none; width: auto; height: auto; flex-direction: row; gap: 6px; align-items: baseline; }
+  .events-preview--editorial .event-card__month { font-size: 13px; }
+  .events-preview--editorial .event-card__day { font-size: 15px; }
+  .events-preview--editorial .event-card__title { font-weight: 400; }
+  .events-preview--editorial .event-card__btn { background: none; color: var(--brand); border-bottom: 2px solid var(--accent); border-radius: 0; padding: 4px 0; }
+  .events-preview--editorial .events-preview__cta { border-radius: 0; border: none; border-bottom: 2px solid var(--accent); padding: 4px 0; }
+
+  /* ── bold: solid accent-colored cards, inverted text ── */
+  .events-preview--bold .event-card { background: var(--accent); border: none; border-radius: 2px; }
+  .events-preview--bold .event-card:hover { box-shadow: none; filter: brightness(1.05); }
+  .events-preview--bold .event-card__date { background: rgba(255,255,255,0.3); border: none; border-radius: 2px; }
+  .events-preview--bold .event-card__month, .events-preview--bold .event-card__day { color: var(--ink); }
+  .events-preview--bold .event-card__title { color: var(--ink); text-transform: uppercase; }
+  .events-preview--bold .event-card__btn { background: var(--brand); color: white; border-radius: 2px; }
+  .events-preview--bold .events-preview__cta { border-radius: 2px; }
+
+  /* ── minimal: plain rows, hairline divider, quiet ── */
+  .events-preview--minimal { padding: 100px 0; }
+  .events-preview--minimal .events-preview__grid { gap: 0; }
+  .events-preview--minimal .event-card { background: none; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 22px 0; }
+  .events-preview--minimal .event-card:hover { box-shadow: none; }
+  .events-preview--minimal .event-card__date { background: none; border: none; width: 48px; height: 48px; }
+  .events-preview--minimal .event-card__title { font-weight: 500; }
+  .events-preview--minimal .event-card__btn { background: none; color: var(--brand); border: 1px solid var(--border); border-radius: 20px; }
+  .events-preview--minimal .events-preview__cta { border-radius: 20px; font-weight: 500; }
+
+  /* ── visitor-first: compact dense rows ── */
+  .events-preview--visitor-first { padding: 40px 0; }
+  .events-preview--visitor-first .events-preview__grid { gap: 8px; }
+  .events-preview--visitor-first .event-card { padding: 14px 18px; gap: 14px; }
+  .events-preview--visitor-first .event-card__date { width: 44px; height: 44px; border-radius: 8px; }
+  .events-preview--visitor-first .event-card__title { font-size: 20px; }
+  .events-preview--visitor-first .event-card__desc { display: none; }
+
   @media (max-width: 900px) {
     .events-preview__header { flex-direction: column; align-items: flex-start; gap: 16px; }
   }

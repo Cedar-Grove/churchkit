@@ -1,0 +1,195 @@
+---
+/**
+ * The homepage hero, in five structural treatments (`theme`) — height,
+ * alignment, overlay darkness, button shape, carousel-control style. Every
+ * treatment reads color from the same custom properties
+ * (--brand/--accent/--white/...) that admin's Branding section controls,
+ * so switching themes never changes a church's configured colors, only how
+ * they're laid out. See @churchkit/config/home-layouts for the theme list.
+ */
+interface Props {
+  carouselSlides: any[];
+  settings: any;
+  text: Record<string, string>;
+  theme: string;
+}
+const { carouselSlides, settings, text, theme } = Astro.props;
+---
+
+<section class={`hero hero--${theme}`} id="hero" data-theme={theme}>
+  <div class="hero__left">
+    {carouselSlides.length > 0 ? (
+      <>
+        <div class="hero__slides">
+          {carouselSlides.map((slide: any, i: number) => (
+            <div class={`hero__slide${i === 0 ? ' hero__slide--active' : ''}`} data-slide={i}>
+              {slide.image_url
+                ? <div class="hero__bg" style={`background-image: url('${slide.image_url}'); background-size: cover; background-position: center;`}></div>
+                : <div class="hero__bg hero__bg--1"></div>
+              }
+              <div class="hero__overlay"></div>
+              {!slide.image_url && (
+                <div class="container hero__content">
+                  {slide.headline && <h1 class="hero__title">{slide.headline}</h1>}
+                  {slide.subtext && <p class="hero__body">{slide.subtext}</p>}
+                  {slide.button_label && slide.button_link && (
+                    <div class="hero__actions">
+                      <a href={slide.button_link} class="hero__btn">{slide.button_label}</a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div class="hero__dots">
+          {carouselSlides.map((_: any, i: number) => (
+            <button class={`hero__dot${i === 0 ? ' hero__dot--active' : ''}`} data-target={i} aria-label={`Slide ${i + 1}`}></button>
+          ))}
+        </div>
+        <button class="hero__arrow hero__arrow--prev" id="hero-prev" aria-label="Previous slide">&#8249;</button>
+        <button class="hero__arrow hero__arrow--next" id="hero-next" aria-label="Next slide">&#8250;</button>
+      </>
+    ) : (
+      <div class="hero__slide hero__slide--active">
+        <div class="hero__bg hero__bg--1"></div>
+        <div class="hero__overlay"></div>
+        <div class="container hero__content">
+          {/*
+            With no carousel slides configured this falls back to the
+            church's own name and tagline — never to invented copy about
+            service times or what a visit is like.
+          */}
+          <h1 class="hero__title">{settings.church_name ?? ''}</h1>
+          {settings.tagline && <p class="hero__body">{settings.tagline}</p>}
+          <div class="hero__actions">
+            <a href="/im-new" class="hero__btn">{text.heroCtaPrimary}</a>
+            <a href="/about" class="hero__btn hero__btn--secondary">{text.heroCtaSecondary}</a>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+  {theme === 'classic' && settings.hero_image_url && (
+    <div class="hero__right">
+      <img src={settings.hero_image_url} alt={settings.church_name ?? ''} class="hero__photo" />
+    </div>
+  )}
+</section>
+
+<style>
+  /* ── classic: split 50/50, full height, rounded pill controls ── */
+  .hero { display: flex; height: 580px; overflow: hidden; background: var(--brand); }
+  .hero__left { position: relative; width: 50%; flex-shrink: 0; }
+  .hero__right { width: 50%; flex-shrink: 0; overflow: hidden; }
+  .hero__photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero__slides { position: relative; width: 100%; height: 100%; }
+  .hero__slide { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; transition: opacity 0.8s ease; pointer-events: none; }
+  .hero__slide--active { opacity: 1; pointer-events: auto; }
+  .hero__bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+  .hero__bg--1 { background: var(--brand); }
+  .hero__overlay { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 50%, rgba(255,255,255,0.04), transparent 60%); }
+  .hero__content { position: relative; z-index: 2; max-width: 600px; }
+  .hero__title { font-size: clamp(56px, 8.4vw, 90px); color: white; font-weight: 600; line-height: 1.08; letter-spacing: -1px; margin-bottom: 18px; }
+  .hero__body { font-family: var(--font-heading); font-size: 24px; color: rgba(255,255,255,0.78); line-height: 1.6; font-weight: 300; margin-bottom: 32px; max-width: 480px; }
+  .hero__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .hero__btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 30px; font-family: var(--font-body); font-size: 14px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; text-decoration: none; letter-spacing: 0.5px; background: var(--accent); color: var(--ink); }
+  .hero__btn:hover { background: var(--brand-light); transform: translateY(-1px); }
+  .hero__btn--secondary { background: transparent; border: 2px solid rgba(255,255,255,0.5); color: white; }
+  .hero__btn--secondary:hover { border-color: white; background: rgba(255,255,255,0.08); }
+  .hero__dots { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
+  .hero__dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.35); border: none; cursor: pointer; transition: all 0.2s; padding: 0; }
+  .hero__dot--active { background: var(--accent); width: 24px; border-radius: 4px; }
+  .hero__arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 22px; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; line-height: 1; }
+  .hero__arrow:hover { background: rgba(255,255,255,0.22); }
+  .hero__arrow--prev { left: 24px; }
+  .hero__arrow--next { right: 24px; }
+
+  /* ── editorial: full-bleed, taller, left-aligned serif, no pill buttons ── */
+  .hero--editorial { height: 640px; }
+  .hero--editorial .hero__left { width: 100%; }
+  .hero--editorial .hero__content { max-width: 720px; }
+  .hero--editorial .hero__title { font-size: clamp(48px, 7vw, 76px); font-weight: 400; letter-spacing: -0.5px; }
+  .hero--editorial .hero__overlay { background: linear-gradient(0deg, rgba(0,0,0,0.35), transparent 55%); }
+  .hero--editorial .hero__btn { border-radius: 0; padding: 14px 0; background: none; color: white; border-bottom: 2px solid var(--accent); }
+  .hero--editorial .hero__btn:hover { transform: none; color: var(--accent); }
+  .hero--editorial .hero__btn--secondary { border: none; border-bottom: 2px solid rgba(255,255,255,0.4); }
+  .hero--editorial .hero__dots { bottom: 36px; left: 64px; transform: none; }
+  .hero--editorial .hero__arrow { display: none; }
+
+  /* ── bold: centered, tall, uppercase, sharp-cornered accent button ── */
+  .hero--bold { height: 680px; }
+  .hero--bold .hero__left { width: 100%; }
+  .hero--bold .hero__content { max-width: 760px; margin: 0 auto; text-align: center; }
+  .hero--bold .hero__overlay { background: rgba(0,0,0,0.3); }
+  .hero--bold .hero__title { text-transform: uppercase; letter-spacing: 1px; font-size: clamp(42px, 6.5vw, 72px); }
+  .hero--bold .hero__body { margin-left: auto; margin-right: auto; }
+  .hero--bold .hero__actions { justify-content: center; }
+  .hero--bold .hero__btn { border-radius: 2px; padding: 16px 34px; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .hero--bold .hero__btn--secondary { border-radius: 2px; border-width: 2px; }
+
+  /* ── minimal: short, quiet, link-style CTA, tiny dots ── */
+  .hero--minimal { height: 420px; }
+  .hero--minimal .hero__left { width: 100%; }
+  .hero--minimal .hero__overlay { background: rgba(0,0,0,0.12); }
+  .hero--minimal .hero__content { max-width: 520px; }
+  .hero--minimal .hero__title { font-size: clamp(36px, 5vw, 54px); font-weight: 500; letter-spacing: 0; }
+  .hero--minimal .hero__body { font-size: 18px; margin-bottom: 20px; }
+  .hero--minimal .hero__btn { background: none; color: white; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.6); border-radius: 0; font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .hero--minimal .hero__btn:hover { transform: none; border-color: white; }
+  .hero--minimal .hero__btn--secondary { border-bottom: 1px solid rgba(255,255,255,0.3); }
+  .hero--minimal .hero__dots { bottom: 18px; }
+  .hero--minimal .hero__dot { width: 5px; height: 5px; }
+  .hero--minimal .hero__dot--active { width: 14px; }
+  .hero--minimal .hero__arrow { display: none; }
+
+  /* ── visitor-first: short banner, brand-solid, big prominent CTA ── */
+  .hero--visitor-first { height: 320px; }
+  .hero--visitor-first .hero__left { width: 100%; }
+  .hero--visitor-first .hero__content { max-width: 640px; }
+  .hero--visitor-first .hero__title { font-size: clamp(34px, 5vw, 52px); margin-bottom: 10px; }
+  .hero--visitor-first .hero__body { font-size: 19px; margin-bottom: 22px; }
+  .hero--visitor-first .hero__btn { padding: 15px 30px; font-size: 15px; }
+  .hero--visitor-first .hero__dots { bottom: 16px; }
+  .hero--visitor-first .hero__arrow { display: none; }
+
+  @media (max-width: 768px) {
+    .hero { height: auto; flex-direction: column; }
+    .hero__left { width: 100%; height: 420px; }
+    .hero__right { width: 100%; height: 260px; }
+    .hero__arrow { display: none; }
+    .hero--editorial, .hero--bold, .hero--minimal, .hero--visitor-first { height: auto; }
+    .hero--editorial .hero__left, .hero--bold .hero__left, .hero--minimal .hero__left, .hero--visitor-first .hero__left { height: 420px; }
+  }
+</style>
+
+<script>
+  const slides = document.querySelectorAll<HTMLElement>('.hero__slide');
+  const dots = document.querySelectorAll<HTMLElement>('.hero__dot');
+  if (slides.length > 1) {
+    let current = 0;
+    let timer: ReturnType<typeof setInterval>;
+    function goTo(index: number) {
+      slides[current].classList.remove('hero__slide--active');
+      dots[current].classList.remove('hero__dot--active');
+      current = (index + slides.length) % slides.length;
+      slides[current].classList.add('hero__slide--active');
+      dots[current].classList.add('hero__dot--active');
+    }
+    function startTimer() { timer = setInterval(() => goTo(current + 1), 5000); }
+    function resetTimer() { clearInterval(timer); startTimer(); }
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => { goTo(parseInt(dot.dataset.target || '0')); resetTimer(); });
+    });
+    document.getElementById('hero-prev')?.addEventListener('click', () => { goTo(current - 1); resetTimer(); });
+    document.getElementById('hero-next')?.addEventListener('click', () => { goTo(current + 1); resetTimer(); });
+    let touchStartX = 0;
+    const hero = document.getElementById('hero');
+    hero?.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    hero?.addEventListener('touchend', e => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) { goTo(diff > 0 ? current + 1 : current - 1); resetTimer(); }
+    });
+    startTimer();
+  }
+</script>
