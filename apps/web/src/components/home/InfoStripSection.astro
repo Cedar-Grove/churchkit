@@ -1,0 +1,72 @@
+---
+interface Props {
+  settings: any;
+  serviceDays: [string, string[]][];
+  text: Record<string, string>;
+}
+const { settings, serviceDays, text } = Astro.props;
+---
+
+<section class="section info-strip">
+  <div class="container">
+    <div class="info-strip__grid">
+      <div class="info-block" hidden={serviceDays.length === 0}>
+        <h3 class="info-block__title">{text.gatheringHeading}</h3>
+        {/*
+          Rendered over whatever days this church actually meets. Naming
+          Sunday and Wednesday in markup assumed one schedule and left a
+          Saturday-worship church unable to express its own — and crashed
+          outright for any church that had not filled both in.
+        */}
+        {serviceDays.map(([day, times]) => (
+          <div class="info-block__group">
+            <div class="info-block__day">{day}</div>
+            {times.map((t) => <div class="info-block__time">{t}</div>)}
+          </div>
+        ))}
+        <div class="info-block__actions">
+          <a href="/im-new" class="btn btn--primary">{text.gatheringCta}</a>
+        </div>
+      </div>
+      <div class="info-block">
+        <h3 class="info-block__title">{text.findUsHeading}</h3>
+        <div class="info-block__address">
+          {settings.address && <p>{settings.address}</p>}
+          {settings.phone && <p style="margin-top: 12px;">{settings.phone}</p>}
+          {settings.email && <p>{settings.email}</p>}
+        </div>
+        <div class="info-block__actions">
+          {settings.address && (
+            <a href={`https://maps.google.com/?q=${encodeURIComponent(settings.address)}`} target="_blank" rel="noopener" class="btn btn--outline">{text.findUsCta}</a>
+          )}
+        </div>
+      </div>
+      <div class="info-block">
+        <h3 class="info-block__title">{text.connectHeading}</h3>
+        <p class="info-block__connect-body">{text.connectBody}</p>
+        <div class="info-block__actions">
+          <a href="/connect-card" class="btn btn--primary">{text.connectCta1}</a>
+          <a href="/im-new" class="btn btn--outline">{text.connectCta2}</a>
+          <a href="/prayer-request" class="btn btn--outline">{text.connectCta3}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .info-strip { background: var(--brand-faint); }
+  .info-strip__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+  .info-block { display: flex; flex-direction: column; }
+  .info-block__title { font-family: var(--font-heading); font-size: 31px; color: var(--brand); font-weight: 600; margin-bottom: 20px; }
+  .info-block__group { margin-bottom: 16px; }
+  .info-block__day { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-mid); margin-bottom: 6px; }
+  .info-block__time { font-size: 20px; color: var(--ink-soft); margin-bottom: 4px; }
+  .info-block__address { font-size: 20px; color: var(--ink-soft); line-height: 1.8; }
+  .info-block__connect-body { font-size: 20px; color: var(--ink-soft); line-height: 1.8; }
+  .info-block__actions { margin-top: auto; padding-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+  .info-block .btn { display: flex; justify-content: center; }
+  @media (max-width: 900px) {
+    .info-strip__grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+</style>

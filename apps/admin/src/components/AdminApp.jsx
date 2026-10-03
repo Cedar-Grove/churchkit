@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { listFontPresets } from "@churchkit/config/font-presets";
 import { buildNav } from "@churchkit/config/nav";
+import { listHomeLayouts } from "@churchkit/config/home-layouts";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 // No default. A guessed API base would point one church's admin panel at
@@ -634,6 +635,11 @@ const HOME_TEXT_GROUPS = [
   ]},
 ];
 
+// [id, "Name — description"] pairs for the layout picker, from
+// @churchkit/config's single definition — see font-presets.mjs's own
+// comment for why this isn't a second copy hand-maintained here.
+const HOME_LAYOUTS = listHomeLayouts();
+
 function HomepagePage({ toast, caps }) {
   const [slides, setSlides] = useState([]);
   const [events, setEvents] = useState([]);
@@ -734,6 +740,19 @@ function HomepagePage({ toast, caps }) {
     }
   }
 
+  // Saves immediately on selection rather than waiting for "Save Homepage
+  // Text" below — a layout choice is a single discrete decision, not a
+  // batch of prose a church drafts and revises before committing.
+  async function setLayout(id) {
+    setText("home_layout", id);
+    try {
+      await api("/api/admin/settings", { method: "POST", body: JSON.stringify({ home_layout: id }) });
+      toast("Homepage layout updated");
+    } catch {
+      toast("Failed to update layout", "error");
+    }
+  }
+
   if (loading) return <Loading />;
 
   return (
@@ -781,6 +800,22 @@ function HomepagePage({ toast, caps }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/*
+        Which order the hero's five content blocks render in — the hero
+        itself and the footer always frame the page, so only what's between
+        them moves. A church with no events or sermon configured yet won't
+        see a visible difference until that content exists; the order is
+        still saved for when it does.
+      */}
+      <div style={{ marginTop: 32, background: "#fff", borderRadius: 12, border: "1px solid #e8e4dd", padding: 24 }}>
+        <h2 style={{ fontFamily: "Playfair Display, serif", fontSize: 18, color: "var(--admin-brand)", margin: "0 0 16px" }}>Homepage Layout</h2>
+        <Field label="Section order">
+          <select style={inputStyle} value={homeText.home_layout || "classic"} onChange={e => setLayout(e.target.value)}>
+            {HOME_LAYOUTS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+          </select>
+        </Field>
       </div>
 
       {/*

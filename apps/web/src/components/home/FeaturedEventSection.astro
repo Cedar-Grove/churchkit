@@ -1,0 +1,41 @@
+---
+import { formatDate } from '../../lib/format';
+
+interface Props {
+  featuredEvent: any;
+  text: Record<string, string>;
+  formats: any;
+}
+const { featuredEvent, text, formats } = Astro.props;
+
+function shortDate(dateStr: string) {
+  return formatDate(new Date(dateStr), formats, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+---
+
+{featuredEvent && (
+  <div class="featured-strip">
+    <div class="container featured-strip__inner">
+      <div class="featured-strip__left">
+        <div class="featured-strip__label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.2l2.55 5.4 5.7.82-4.13 4.15.98 5.93L12 16.7l-5.1 2.8.97-5.93L3.75 9.42l5.7-.82L12 3.2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {text.featuredEventEyebrow}</div>
+        <div class="featured-strip__title">{featuredEvent.name || text.featuredEventFallbackName}</div>
+        {featuredEvent.starts_at && (
+          <div class="featured-strip__meta"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.4h16v15H4zM4 10h16M8.6 2.8v4.6M15.4 2.8v4.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> {shortDate(featuredEvent.starts_at)}</div>
+        )}
+      </div>
+      {featuredEvent.source === 'registrations' && (
+        <a href={featuredEvent.registration_url} class="btn btn--white">{text.featuredEventCta}</a>
+      )}
+    </div>
+  </div>
+)}
+
+<style>
+  .featured-strip { background: var(--accent); padding: 36px 0; }
+  .featured-strip__inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .featured-strip__label { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink-faint); margin-bottom: 6px; }
+  .featured-strip__title { font-family: var(--font-heading); font-size: 36px; color: var(--ink); font-weight: 600; }
+  .featured-strip__meta { display: inline-flex; align-items: center; gap: 8px; font-size: 21px; color: var(--ink-soft); margin-top: 6px; }
+  .btn--white { background: white; color: var(--brand); font-weight: 700; white-space: nowrap; }
+  .btn--white:hover { background: var(--brand-faint); }
+</style>

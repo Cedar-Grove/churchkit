@@ -1,0 +1,59 @@
+---
+import { formatDate } from '../../lib/format';
+
+interface Props {
+  latestSermonWithVideo: any;
+  text: Record<string, string>;
+  formats: any;
+}
+const { latestSermonWithVideo, text, formats } = Astro.props;
+
+function shortDate(dateStr: string) {
+  return formatDate(new Date(dateStr), formats, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+---
+
+{latestSermonWithVideo && (
+  <section class="section latest-sermon">
+    <div class="container">
+      <div class="latest-sermon__inner">
+        <div class="latest-sermon__text">
+          <p class="section__eyebrow">{text.sermonEyebrow}</p>
+          <h2 class="section__heading">{latestSermonWithVideo.title || text.sermonFallbackTitle}</h2>
+          {latestSermonWithVideo.series_title && <p class="latest-sermon__series">{latestSermonWithVideo.series_title}</p>}
+          <p class="latest-sermon__date">{shortDate(latestSermonWithVideo.date)}</p>
+          <div class="latest-sermon__actions">
+            <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="btn btn--primary"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg> {text.sermonCtaWatch}</a>
+            <a href="/media" class="btn btn--outline">{text.sermonCtaBrowse}</a>
+          </div>
+        </div>
+        <a href={latestSermonWithVideo.youtube_url} target="_blank" rel="noopener" class="latest-sermon__thumb">
+          {latestSermonWithVideo.thumbnail
+            ? <img src={latestSermonWithVideo.thumbnail} alt={latestSermonWithVideo.title || 'Latest sermon'} loading="lazy" />
+            : <div class="latest-sermon__thumb-placeholder"><svg width="44" height="44" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3.6 2.3L11.4 7L3.6 11.7V2.3Z" fill="currentColor"/></svg></div>
+          }
+          <div class="latest-sermon__play-btn"></div>
+        </a>
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .latest-sermon { background: var(--white); }
+  .latest-sermon__inner { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  .latest-sermon__series { font-size: 13px; font-weight: 600; color: var(--brand); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .latest-sermon__date { font-size: 13px; color: var(--ink-faint); margin-bottom: 24px; }
+  .latest-sermon__actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .latest-sermon__thumb { position: relative; aspect-ratio: 16/10; border-radius: 16px; overflow: hidden; display: block; background: var(--brand); cursor: pointer; }
+  .latest-sermon__thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+  .latest-sermon__thumb:hover img { transform: scale(1.04); }
+  .latest-sermon__thumb-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; color: rgba(255,255,255,0.4); }
+  .latest-sermon__play-btn { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); transition: background 0.2s; }
+  .latest-sermon__thumb:hover .latest-sermon__play-btn { background: rgba(0,0,0,0.35); }
+  .latest-sermon__play-btn::after { content: ''; width: 56px; height: 56px; background: rgba(255,255,255,0.92); border-radius: 50%; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 14 14'%3E%3Cpath d='M3.6 2.3L11.4 7L3.6 11.7V2.3Z' fill='%23273920'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+  @media (max-width: 900px) {
+    .latest-sermon__inner { grid-template-columns: 1fr; }
+    .latest-sermon__thumb { order: -1; }
+  }
+</style>

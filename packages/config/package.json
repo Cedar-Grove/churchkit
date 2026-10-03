@@ -17,6 +17,10 @@
     "./password": {
       "types": "./src/password.d.ts",
       "default": "./src/password.mjs"
+    },
+    "./home-layouts": {
+      "types": "./src/home-layouts.d.ts",
+      "default": "./src/home-layouts.mjs"
     }
   }
 }
