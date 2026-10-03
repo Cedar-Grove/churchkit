@@ -12,6 +12,9 @@
     "build:node": "esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.mjs --external:node:*",
     "start:node": "node dist/server.mjs"
   },
+  "dependencies": {
+    "@churchkit/config": "*"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",
     "typescript": "^5.7.0",

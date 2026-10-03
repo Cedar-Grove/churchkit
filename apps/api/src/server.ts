@@ -8,12 +8,15 @@
  *
  *   CHURCHKIT_DB=./data/churchkit.db \
  *   CHURCHKIT_MEDIA_DIR=./data/media \
- *   ADMIN_AUTH_MODE=proxy-header \
  *   node dist/server.js
  *
  * A self-hosted deployment is responsible for what Cloudflare otherwise
- * provides: TLS, a cache in front of the API, and — most importantly —
- * authenticating admins. See platform/adminAuth.ts.
+ * provides: TLS and a cache in front of the API. Authenticating admins is
+ * not one of those things to set up separately — ADMIN_AUTH_MODE defaults
+ * to `local` (username/password, stored in this deployment's own database)
+ * on this host exactly as it does on Workers. Set ADMIN_AUTH_MODE=
+ * proxy-header to delegate to a reverse proxy (oauth2-proxy, Authelia,
+ * Tailscale Serve) instead. See platform/adminAuth.ts.
  */
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { Env } from './types';
@@ -88,8 +91,8 @@ async function main(): Promise<void> {
 
 	if (env.ADMIN_AUTH?.name === 'none') {
 		console.warn(
-			'⚠ No admin authentication configured (ADMIN_AUTH_MODE). The admin API will ' +
-			'refuse every request until one is set. See docs/deploy-self-hosted.md.'
+			'⚠ ADMIN_AUTH_MODE names a scheme this build does not recognise. The admin ' +
+			'API will refuse every request until it is fixed. See docs/deploy-self-hosted.md.'
 		);
 	}
 

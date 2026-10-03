@@ -4,6 +4,7 @@ import { readBrand, appDir, resourceNames, REPO_ROOT } from '../lib/paths.mjs';
 import { validate } from '../../../packages/brand/src/validate.mjs';
 import { toSettingsSql } from '../../../packages/brand/src/seed.mjs';
 import { run } from '../lib/run.mjs';
+import { hashPassword, generatePassword } from '@churchkit/config/password';
 
 /**
  * Load a church's identity into its database.
@@ -67,6 +68,11 @@ export async function seed({ slug, flags }) {
 		? run('docker', [...compose, 'exec', '-T', 'api', 'npx', 'wrangler', 'd1', 'execute', database, ...where, `--file=${file}`], { dryRun })
 		: run('npx', ['wrangler', 'd1', 'execute', database, ...where, `--file=${file}`], { dryRun, cwd: api });
 
+	/** Like `execute`, but a `--command` string with its result captured and parsed, for the admin-login check below. */
+	const query = (sql) => local
+		? run('docker', [...compose, 'exec', '-T', 'api', 'npx', 'wrangler', 'd1', 'execute', database, ...where, '--command', sql], { dryRun, capture: true })
+		: run('npx', ['wrangler', 'd1', 'execute', database, ...where, '--command', sql], { dryRun, cwd: api, capture: true });
+
 	// Schema first. Every statement is CREATE TABLE IF NOT EXISTS, so this is
 	// a no-op on a database that already has one.
 	console.log('\n1. Schema');
@@ -93,11 +99,48 @@ export async function seed({ slug, flags }) {
 		writeFileSync(hostPath, toSettingsSql(brand));
 	}
 	const result = execute(local ? `/repo/.wrangler/${sqlName}` : hostPath);
+	if (!result.ok && !result.dryRun) return 1;
 
-	if (result.ok || result.dryRun) {
-		console.log(`\nDone. Re-run this after editing brand.json — it updates identity`);
-		console.log('and leaves pages, staff and carousel content alone.\n');
-		return 0;
+	// ── Default admin login ───────────────────────────────────────
+	// Only ever created, never reset: re-running `churchkit seed` after
+	// someone has already logged in and changed their password must not
+	// silently hand out a new one and log every session out. The check is a
+	// real SELECT rather than "assume seeded means present" because schema
+	// and identity are both safe to re-run unconditionally, and this step
+	// alone is not.
+	console.log(`\n${flags.has('example') ? '4' : '3'}. Admin login`);
+	if (dryRun) {
+		console.log('  would create a default admin login if none exists yet');
+	} else {
+		const check = query('SELECT COUNT(*) as n FROM admin_users;');
+		// A query that fails to parse is treated as "an admin already exists"
+		// — the safe direction to be wrong in, since the alternative is
+		// minting a second default password nobody asked for.
+		let existing = 1;
+		if (check.ok) {
+			try {
+				existing = JSON.parse(check.stdout)?.[0]?.results?.[0]?.n ?? 1;
+			} catch { /* existing stays at the fail-safe value of 1 */ }
+		}
+
+		if (existing > 0) {
+			console.log('  an admin login already exists — leaving it alone');
+		} else {
+			const password = generatePassword();
+			const hash = hashPassword(password).replace(/'/g, "''");
+			const inserted = query(`INSERT INTO admin_users (username, password_hash) VALUES ('admin', '${hash}');`);
+			if (inserted.ok) {
+				console.log('\n  Default admin login (shown once — write it down now):');
+				console.log('    username: admin');
+				console.log(`    password: ${password}`);
+				console.log('  You will be asked to set a new password on first login.\n');
+			} else {
+				console.error('  ✗ Could not create the default admin login. Run `churchkit seed ' + slug + '` again.');
+			}
+		}
 	}
-	return 1;
+
+	console.log(`Done. Re-run this after editing brand.json — it updates identity`);
+	console.log('and leaves pages, staff, carousel content, and the admin login alone.\n');
+	return 0;
 }

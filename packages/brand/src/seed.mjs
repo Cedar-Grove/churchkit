@@ -60,6 +60,14 @@ export function settingsFromBrand(brand) {
 		timezone: brand.timezone ?? '',
 		locale: brand.locale ?? '',
 		social: JSON.stringify(brand.social ?? {}),
+		// The admin panel's own chrome does not read tokens.css — it reads
+		// these two settings, falling back to a generic default when they're
+		// unset (see apps/admin/src/components/AdminApp.jsx). Without this, a
+		// freshly provisioned deployment's admin panel looks like no church
+		// in particular until someone visits Settings and sets them by hand,
+		// which contradicts "change brand.json and the whole stack follows."
+		theme_primary_color: brand.colors?.brand ?? '',
+		theme_accent_color: brand.colors?.accent ?? '',
 	};
 }
 

@@ -18,7 +18,8 @@ import { resolveAdminAuth } from './platform/adminAuth';
 function withPlatform(env: Env & { ADMIN_AUTH_MODE?: string }): Env {
 	return {
 		...env,
-		ADMIN_AUTH: env.ADMIN_AUTH ?? resolveAdminAuth(env.ADMIN_AUTH_MODE ?? 'cloudflare-access', env),
+		// Unset resolves to local login — see resolveAdminAuth's doc comment.
+		ADMIN_AUTH: env.ADMIN_AUTH ?? resolveAdminAuth(env.ADMIN_AUTH_MODE, env),
 	};
 }
 

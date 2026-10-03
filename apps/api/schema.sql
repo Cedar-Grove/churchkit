@@ -127,3 +127,29 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
+
+-- Local admin login (platform/localAuth.ts) — the default auth mode on a
+-- deployment that hasn't opted into Cloudflare Access/SSO. One row per
+-- admin user; `churchkit provision` inserts a generated default here.
+CREATE TABLE IF NOT EXISTS admin_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  -- Forces a password change on the first login after `churchkit provision`
+  -- generates a default — a printed-once password that's never required to
+  -- change is a password everyone eventually finds in a terminal scrollback.
+  must_change_password INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER DEFAULT (unixepoch())
+);
+
+-- Only the session token's hash is stored, so a read of this table (a bug,
+-- a backup, a leaked D1 export) cannot itself be used to log in — the same
+-- reasoning as never storing the password in plain text.
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES admin_users(id),
+  created_at INTEGER DEFAULT (unixepoch()),
+  expires_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_sessions_expires ON admin_sessions(expires_at);

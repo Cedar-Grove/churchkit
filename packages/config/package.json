@@ -13,6 +13,10 @@
     "./nav": {
       "types": "./src/nav.d.ts",
       "default": "./src/nav.mjs"
+    },
+    "./password": {
+      "types": "./src/password.d.ts",
+      "default": "./src/password.mjs"
     }
   }
 }

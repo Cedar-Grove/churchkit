@@ -81,6 +81,24 @@ export async function doctor({ slug, args }) {
 		else notes.push(secret.name);
 	}
 
+	// ── Admin login ──────────────────────────────────────────────
+	const authMode = process.env.ADMIN_AUTH_MODE || 'local (default)';
+	if (!process.env.ADMIN_AUTH_MODE || process.env.ADMIN_AUTH_MODE === 'local') {
+		console.log(`\n✓ Admin login: local — set via \`churchkit seed\`'s default admin user, no secrets needed`);
+	} else if (process.env.ADMIN_AUTH_MODE === 'cloudflare-access') {
+		if (process.env.CF_ACCESS_AUD) {
+			console.log(`\n✓ Admin login: cloudflare-access (CF_ACCESS_AUD set)`);
+		} else {
+			console.log(`\n✗ Admin login: cloudflare-access selected, but CF_ACCESS_AUD is not set — the admin API will refuse every request`);
+			problems.push('ADMIN_AUTH_MODE=cloudflare-access but CF_ACCESS_AUD is unset');
+		}
+	} else if (process.env.ADMIN_AUTH_MODE === 'proxy-header') {
+		console.log(`\n· Admin login: proxy-header — only as strong as whatever reverse proxy sits in front of this deployment`);
+	} else {
+		console.log(`\n✗ Admin login: ADMIN_AUTH_MODE="${authMode}" is not a recognised mode`);
+		problems.push(`unknown ADMIN_AUTH_MODE "${authMode}"`);
+	}
+
 	// A bypass left set outside local development is worth shouting about,
 	// even though it cannot actually authorise anything on a real hostname.
 	if (process.env.ADMIN_DEV_BYPASS) {

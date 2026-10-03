@@ -50,21 +50,34 @@ npx churchkit doctor    my-church
 `wrangler.jsonc`, and applies the schema. It is safe to re-run, and cannot
 undo itself — hence the dry run first.
 
-## The two steps a script should not do for you
+## Logging into the admin panel
+
+`provision --seed` creates a default admin login and prints it once —
+username `admin`, a generated password. Write it down when you see it; it
+is never shown again, and the panel forces a new password on first login.
+No Cloudflare Access application, identity provider, or secret is needed
+to get in — this is the default (`ADMIN_AUTH_MODE=local`), not a fallback.
+
+## The step a script should not do for you
 
 **Custom domains.** `provision` prints which hostname belongs to which
 Worker; attach them in the Cloudflare dashboard.
 
-**Cloudflare Access.** Create an Access application covering the admin
-panel's hostname, choose which identity provider and which staff addresses
-may use it, then set its audience tag:
+## Optional: SSO instead of local login
+
+Prefer Cloudflare Access — your church's Google/Microsoft/GitHub identity
+provider, or a one-time email PIN — over a shared username and password?
+Create an Access application covering the admin panel's hostname, choose
+which identity provider and which staff addresses may use it, set
+`ADMIN_AUTH_MODE=cloudflare-access`, and set its audience tag:
 
 ```bash
 cd apps/api && npx wrangler secret put CF_ACCESS_AUD
 ```
 
-Until you do, the admin API refuses every request and says so. That is
-deliberate: an unconfigured deployment is inaccessible, never open.
+With `ADMIN_AUTH_MODE=cloudflare-access` set but `CF_ACCESS_AUD` not yet
+set, the admin API refuses every request and says so — an Access
+deployment mid-setup is inaccessible, never open.
 
 ## Checking secrets actually work
 

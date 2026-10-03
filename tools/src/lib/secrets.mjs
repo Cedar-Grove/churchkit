@@ -57,7 +57,7 @@ export const SECRETS = [
 	{ name: 'YOUTUBE_CHANNEL_ID', feature: 'sermon video and live stream', group: 'Video',
 		where: "YouTube Studio → Settings → Channel → Advanced settings — or the channel's own page URL if it isn't a custom handle." },
 
-	{ name: 'CF_ACCESS_AUD', feature: 'the admin panel', group: 'Admin',
+	{ name: 'CF_ACCESS_AUD', feature: 'SSO on the admin panel (only read when ADMIN_AUTH_MODE=cloudflare-access; local login is the default and needs none of this)', group: 'Admin',
 		where: 'Cloudflare Zero Trust → Access → Applications → the application protecting the admin panel → its Application Audience (AUD) Tag.' },
 	{ name: 'TURNSTILE_SECRET', feature: 'bot challenge on public forms', group: 'Admin',
 		where: 'Cloudflare dashboard → Turnstile → the widget → Secret Key.' },
@@ -68,8 +68,16 @@ export const SECRETS = [
 		where: 'scripture.api.bible → sign up → create an API key.' },
 ];
 
-/** Secrets that, if absent, leave the deployment with no admin panel at all. */
-export const ADMIN_CRITICAL = ['CF_ACCESS_AUD'];
+/**
+ * Secrets that, if absent, leave the deployment with no admin panel at all.
+ *
+ * Empty: `local` login (the default admin auth mode) needs none of these —
+ * see platform/adminAuth.ts. CF_ACCESS_AUD only matters when a deployment
+ * has explicitly opted into ADMIN_AUTH_MODE=cloudflare-access, which
+ * `doctor` checks separately rather than flagging it as universally
+ * critical.
+ */
+export const ADMIN_CRITICAL = [];
 
 export function secretNames() {
 	return SECRETS.map((s) => s.name);

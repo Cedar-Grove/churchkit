@@ -2598,12 +2598,167 @@ function NavigationPage({ toast, settings, caps }) {
 // ════════════════════════════════════════════════════════════════════════════════
 // APP ROOT
 // ════════════════════════════════════════════════════════════════════════════════
+// ─── Local login ────────────────────────────────────────────────────────────
+// Only ever rendered under `local` admin-auth mode — a deployment using
+// cloudflare-access never reaches this screen, because Cloudflare's own
+// hosted login runs at the edge before a request gets here at all. See
+// apps/api/src/platform/localAuth.ts.
+function LoginScreen({ onSuccess }) {
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const res = await api("/api/admin/login", { method: "POST", body: JSON.stringify({ username, password }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Invalid username or password.");
+        return;
+      }
+      onSuccess({ username: data.username, mustChangePassword: !!data.mustChangePassword, password });
+    } catch {
+      setError("Could not reach the server. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#faf8f3" }}>
+      <form onSubmit={submit} style={{ width: 360, background: "#fff", borderRadius: 12, padding: 32, boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+        <h1 style={{ fontFamily: "Playfair Display, serif", fontSize: 24, color: "var(--admin-brand)", marginBottom: 4 }}>Admin Login</h1>
+        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#777", marginBottom: 24 }}>Sign in to manage this site.</p>
+        <Field label="Username" required>
+          <input style={inputStyle} value={username} onChange={e => setUsername(e.target.value)} autoFocus autoComplete="username" />
+        </Field>
+        <Field label="Password" required>
+          <input style={inputStyle} type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
+        </Field>
+        {error && <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#c0392b", marginBottom: 16 }}>{error}</p>}
+        <button type="submit" disabled={busy} style={{ ...btnPrimary, width: "100%", opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Signing in…" : "Sign In"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * Forced after a login whose password was the one `churchkit seed` printed
+ * once and never again — the point of `must_change_password` is that this
+ * screen is unavoidable, not a dismissible banner someone defers forever.
+ */
+function ForceChangePassword({ username, currentPassword, onDone }) {
+  const [current, setCurrent] = useState(currentPassword);
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (next.length < 12) { setError("New password must be at least 12 characters."); return; }
+    if (next !== confirm) { setError("Passwords do not match."); return; }
+    setBusy(true);
+    setError("");
+    try {
+      const res = await api("/api/admin/password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword: current, newPassword: next }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error || "Could not change password."); return; }
+      onDone();
+    } catch {
+      setError("Could not reach the server. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#faf8f3" }}>
+      <form onSubmit={submit} style={{ width: 380, background: "#fff", borderRadius: 12, padding: 32, boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
+        <h1 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "var(--admin-brand)", marginBottom: 4 }}>Set a New Password</h1>
+        <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#777", marginBottom: 24 }}>
+          You're signed in as <strong>{username}</strong> with the default password. Choose a new one before continuing.
+        </p>
+        <Field label="New password" required>
+          <input style={inputStyle} type="password" value={next} onChange={e => setNext(e.target.value)} autoFocus autoComplete="new-password" />
+        </Field>
+        <Field label="Confirm new password" required>
+          <input style={inputStyle} type="password" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" />
+        </Field>
+        {error && <p style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#c0392b", marginBottom: 16 }}>{error}</p>}
+        <button type="submit" disabled={busy} style={{ ...btnPrimary, width: "100%", opacity: busy ? 0.6 : 1 }}>
+          {busy ? "Saving…" : "Set Password"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * The panel's fonts, resets, and --admin-brand/--admin-accent custom
+ * properties — needed on the login/change-password/unavailable screens
+ * too, not just the authenticated shell, since those render *instead of*
+ * the shell rather than inside it and would otherwise see undefined
+ * custom properties (an empty var() with no declared fallback).
+ */
+function GlobalStyle({ primaryColor, accentColor }) {
+  return (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
+      :root { --admin-brand: ${primaryColor}; --admin-accent: ${accentColor}; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #faf8f3; }
+      @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      input:focus, textarea:focus, select:focus { border-color: var(--admin-brand) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-brand) 10%, transparent); }
+      button:hover { opacity: 0.9; }
+      [contenteditable] h1 { font-family: Playfair Display, serif; font-size: 28px; color: var(--admin-brand); margin: 16px 0 8px; }
+      [contenteditable] h2 { font-family: Playfair Display, serif; font-size: 22px; color: var(--admin-brand); margin: 14px 0 6px; }
+      [contenteditable] h3 { font-family: DM Sans, sans-serif; font-size: 16px; font-weight: 700; color: #333; margin: 12px 0 4px; }
+      [contenteditable] blockquote { border-left: 3px solid var(--admin-accent); padding: 10px 16px; margin: 12px 0; color: #555; font-style: italic; }
+      [contenteditable] ul, [contenteditable] ol { padding-left: 24px; margin: 8px 0; }
+      [contenteditable] p { margin: 6px 0; }
+    `}</style>
+  );
+}
+
 export default function App() {
   const [page, setPage] = useState("homepage");
   const [unread, setUnread] = useState(0);
   const { toasts, show: toast } = useToast();
 
   const [user, setUser] = useState({ name: "Admin", email: "" });
+
+  // Gates the whole panel. Cloudflare Access never reaches "login" or
+  // "unavailable" — it authenticates at the edge before a request gets
+  // here, so by the time this component runs, an Access-protected
+  // deployment's /api/admin/settings probe below already succeeds.
+  const [authState, setAuthState] = useState("checking");
+  const [authError, setAuthError] = useState("");
+  const [pendingLogin, setPendingLogin] = useState(null);
+  const usingAccessRef = useRef(false);
+
+  useEffect(() => {
+    api("/api/admin/settings").then(async (r) => {
+      if (r.ok) { setAuthState("ok"); return; }
+      if (r.status === 401) { setAuthState("login"); return; }
+      if (r.status === 501) {
+        const body = await r.json().catch(() => ({}));
+        setAuthError(body.remedy || body.error || "The admin panel is not configured on this deployment.");
+        setAuthState("unavailable");
+        return;
+      }
+      setAuthState("login");
+    }).catch(() => setAuthState("login"));
+  }, []);
 
   // The panel is labelled with whatever church this deployment serves. No
   // name is hardcoded anywhere in this file.
@@ -2639,12 +2794,23 @@ export default function App() {
   useEffect(() => {
     fetch("/cdn-cgi/access/get-identity", { credentials: "include" })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.email) setUser({ name: data.name || data.email, email: data.email }); })
+      .then(data => {
+        if (data?.email) {
+          setUser({ name: data.name || data.email, email: data.email });
+          usingAccessRef.current = true;
+        }
+      })
       .catch(() => {});
   }, []);
 
-  function handleSignOut() {
-    window.location.href = "/cdn-cgi/access/logout";
+  async function handleSignOut() {
+    if (usingAccessRef.current) {
+      window.location.href = "/cdn-cgi/access/logout";
+      return;
+    }
+    await api("/api/admin/logout", { method: "POST" }).catch(() => {});
+    setUser({ name: "Admin", email: "" });
+    setAuthState("login");
   }
 
   const PAGE_TITLES = {
@@ -2663,6 +2829,53 @@ export default function App() {
   useEffect(() => {
     if (APP_ONLY_PAGES.has(page) && !caps.push) setPage("homepage");
   }, [page, caps.push]);
+
+  if (authState === "checking") return null;
+
+  if (authState === "unavailable") {
+    return (
+      <>
+        <GlobalStyle primaryColor={primaryColor} accentColor={accentColor} />
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#faf8f3", fontFamily: "DM Sans, sans-serif", padding: 24 }}>
+          <div style={{ maxWidth: 440, textAlign: "center" }}>
+            <h1 style={{ fontFamily: "Playfair Display, serif", fontSize: 22, color: "var(--admin-brand)", marginBottom: 12 }}>Admin Panel Unavailable</h1>
+            <p style={{ color: "#555", fontSize: 14 }}>{authError}</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (authState === "login") {
+    return (
+      <>
+        <GlobalStyle primaryColor={primaryColor} accentColor={accentColor} />
+        <LoginScreen
+          onSuccess={({ username, mustChangePassword, password }) => {
+            if (mustChangePassword) {
+              setPendingLogin({ username, password });
+              setAuthState("change-password");
+            } else {
+              setAuthState("ok");
+            }
+          }}
+        />
+      </>
+    );
+  }
+
+  if (authState === "change-password") {
+    return (
+      <>
+        <GlobalStyle primaryColor={primaryColor} accentColor={accentColor} />
+        <ForceChangePassword
+          username={pendingLogin?.username}
+          currentPassword={pendingLogin?.password}
+          onDone={() => { setPendingLogin(null); setAuthState("ok"); }}
+        />
+      </>
+    );
+  }
 
   const renderPage = () => {
     const props = { toast, setPage, settings, siteUrl, churchName, caps };
@@ -2683,25 +2896,7 @@ export default function App() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
-        /* Set once here (not as an inline style further down) so every
-           component in this file can use var(--admin-brand/--admin-accent)
-           regardless of where it sits in the tree — including ToastStack,
-           which renders as a sibling of the main layout, not a descendant. */
-        :root { --admin-brand: ${primaryColor}; --admin-accent: ${accentColor}; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #faf8f3; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        input:focus, textarea:focus, select:focus { border-color: var(--admin-brand) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--admin-brand) 10%, transparent); }
-        button:hover { opacity: 0.9; }
-        [contenteditable] h1 { font-family: Playfair Display, serif; font-size: 28px; color: var(--admin-brand); margin: 16px 0 8px; }
-        [contenteditable] h2 { font-family: Playfair Display, serif; font-size: 22px; color: var(--admin-brand); margin: 14px 0 6px; }
-        [contenteditable] h3 { font-family: DM Sans, sans-serif; font-size: 16px; font-weight: 700; color: #333; margin: 12px 0 4px; }
-        [contenteditable] blockquote { border-left: 3px solid var(--admin-accent); padding: 10px 16px; margin: 12px 0; color: #555; font-style: italic; }
-        [contenteditable] ul, [contenteditable] ol { padding-left: 24px; margin: 8px 0; }
-        [contenteditable] p { margin: 6px 0; }
-      `}</style>
+      <GlobalStyle primaryColor={primaryColor} accentColor={accentColor} />
       <div style={{ display: "flex", minHeight: "100vh" }}>
         <Sidebar page={page} setPage={setPage} unread={unread} user={user} onSignOut={handleSignOut} churchName={churchName} caps={caps} />
         <div style={{ marginLeft: 240, flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh" }}>

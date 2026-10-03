@@ -8,6 +8,9 @@
   "bin": {
     "churchkit": "src/cli.mjs"
   },
+  "dependencies": {
+    "@churchkit/config": "*"
+  },
   "scripts": {
     "test": "node --test \"test/*.test.mjs\""
   }

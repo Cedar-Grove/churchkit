@@ -5,6 +5,7 @@ import { sendPush } from '../lib/push';
 import { getSettings, getMergedSermons, ensureDeviceTokensColumns } from '../lib/data';
 import { runHealthChecks } from '../lib/health';
 import { getChurchDetails } from '../lib/template';
+import { changePassword } from '../platform/localAuth';
 export { verifyAccessJWT } from '../lib/access-jwt';
 
 /**
@@ -143,6 +144,23 @@ export async function handleAdmin(
 			await env.DB.prepare('UPDATE staff SET active = 0 WHERE id = ?').bind(staffMatch[1]).run();
 			return json({ success: true });
 		}
+	}
+
+	// ── Local-login password change ─────────────────────────────
+	// Only meaningful under `local` mode; under cloudflare-access there is no
+	// local password to change. Re-verifies the current request's own
+	// session to learn *who* is changing it, rather than threading the
+	// already-verified identity through every handleAdmin call for the sake
+	// of this one route.
+	if (path === '/api/admin/password' && method === 'POST') {
+		if (env.ADMIN_AUTH?.name !== 'local') return notConfigured('admin', 'Password change is only available under local login.');
+		const who = await env.ADMIN_AUTH.verify(request);
+		if (!who.ok || !who.email) return err('Unauthorized', 401);
+		const { currentPassword, newPassword } = await request.json() as any;
+		if (!currentPassword || !newPassword) return err('currentPassword and newPassword are required', 400);
+		const result = await changePassword(env, who.email, currentPassword, newPassword);
+		if (!result.ok) return err(result.reason || 'Could not change password', 400);
+		return json({ success: true });
 	}
 
 	// ── Pages ──────────────────────────────────────────────────

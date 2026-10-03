@@ -70,7 +70,11 @@ export function capabilities(env: Env): Capabilities {
 		push: has(env, 'ONESIGNAL_APP_ID', 'ONESIGNAL_API_KEY'),
 		email: has(env, 'RESEND_API_KEY'),
 		mediaUploads: has(env, 'MEDIA', 'MEDIA_PUBLIC_URL'),
-		admin: has(env, 'CF_ACCESS_AUD'),
+		// `local` resolves even with no configuration at all (see
+		// resolveAdminAuth's default), so admin is available out of the box;
+		// only an explicit `cloudflare-access` with no CF_ACCESS_AUD, or an
+		// unrecognised ADMIN_AUTH_MODE, resolves to 'none'.
+		admin: !!env.ADMIN_AUTH && env.ADMIN_AUTH.name !== 'none',
 		// Either provider can serve text; only Bible Brain serves audio.
 		bible: has(env, 'BIBLE_BRAIN_API_KEY') || has(env, 'BIBLE_API_KEY'),
 		bibleAudio: has(env, 'BIBLE_BRAIN_API_KEY'),
@@ -93,7 +97,7 @@ export const CAPABILITY_REQUIREMENTS: Record<keyof Capabilities, string> = {
 	push: 'Set ONESIGNAL_APP_ID and ONESIGNAL_API_KEY.',
 	email: 'Set RESEND_API_KEY.',
 	mediaUploads: 'Bind an R2 bucket as MEDIA and set MEDIA_PUBLIC_URL.',
-	admin: 'Set CF_ACCESS_AUD from your Cloudflare Access application.',
+	admin: 'Local login is the default and needs no setup. If ADMIN_AUTH_MODE is set to cloudflare-access, also set CF_ACCESS_AUD from your Access application.',
 	bible: 'Set BIBLE_BRAIN_API_KEY or BIBLE_API_KEY.',
 	bibleAudio: 'Set BIBLE_BRAIN_API_KEY.',
 	botProtection: 'Optional. Set TURNSTILE_SECRET to challenge form submissions.',

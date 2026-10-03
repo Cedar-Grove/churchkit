@@ -141,17 +141,17 @@ export async function provision({ slug, flags }) {
 	if (seeded !== 0) return seeded;
 
 	// ── 6. What a person still has to do ─────────────────────────
-	console.log(`\n${'─'.repeat(56)}\nProvisioned. Four things still need a human:\n`);
+	console.log(`\n${'─'.repeat(56)}\nProvisioned. The admin panel can already be logged into — see the`);
+	console.log(`default admin login printed above. Three more things need a human:\n`);
 	console.log(`  1. Secrets — churchkit secrets ${slug}`);
 	console.log(`     Credentials decide which features exist. None are required.`);
 	console.log(`\n  2. Custom domains — attach in the Cloudflare dashboard:`);
 	console.log(`       ${apiHost}  →  ${names.apiWorker}`);
 	console.log(`       ${webHost}  →  ${names.webWorker}`);
-	console.log(`\n  3. Cloudflare Access — create an application covering the admin`);
-	console.log(`     panel's hostname, then set its audience tag:`);
-	console.log(`       wrangler secret put CF_ACCESS_AUD`);
-	console.log(`     Without it the admin API refuses every request, by design.`);
-	console.log(`\n  4. Deploy — churchkit deploy ${slug}`);
+	console.log(`\n  3. Deploy — churchkit deploy ${slug}`);
+	console.log(`\nOptional — to use SSO instead of local login, create a Cloudflare`);
+	console.log(`Access application covering the admin panel's hostname, set`);
+	console.log(`ADMIN_AUTH_MODE=cloudflare-access, then: wrangler secret put CF_ACCESS_AUD`);
 	console.log(`\nCheck the result with: churchkit doctor ${slug}\n`);
 	return 0;
 }

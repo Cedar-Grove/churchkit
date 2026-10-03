@@ -77,6 +77,7 @@ import {
 	handleSubmitCheckIn,
 } from './routes/auth';
 import { handleAdmin } from './routes/admin';
+import { handleAdminLogin, handleAdminLogout } from './routes/adminAuth';
 import { handleBibleAudio, handleBibleText } from './routes/bible';
 import { purgeExpiredRateLimits } from './lib/rateLimit';
 import { isLocalDevRequest } from './lib/localAdmin';
@@ -166,6 +167,22 @@ async function route(path: string, method: string, request: Request, env: Env, o
 	// ── ADMIN ROUTES ────────────────────────────────────────────
 	if (path.startsWith('/api/admin/')) {
 		const cors = adminCorsHeaders(origin, env);
+
+		// Login and logout authenticate the request themselves — gating them
+		// behind the same check everything else below needs would make it
+		// impossible to ever present valid credentials in the first place.
+		if (path === '/api/admin/login' && method === 'POST') {
+			const resp = await handleAdminLogin(request, env);
+			const out = new Response(resp.body, { status: resp.status, headers: resp.headers });
+			for (const [k, v] of Object.entries(cors)) out.headers.set(k, v);
+			return out;
+		}
+		if (path === '/api/admin/logout' && method === 'POST') {
+			const resp = await handleAdminLogout(request, env);
+			const out = new Response(resp.body, { status: resp.status, headers: resp.headers });
+			for (const [k, v] of Object.entries(cors)) out.headers.set(k, v);
+			return out;
+		}
 
 		// The local stack has no Cloudflare Access in front of it. This is
 		// only ever true for a request whose own hostname is loopback, which

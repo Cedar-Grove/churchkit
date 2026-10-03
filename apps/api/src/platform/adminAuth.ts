@@ -1,6 +1,7 @@
 import type { Env } from '../types';
 import type { AdminAuth, AdminAuthResult } from './types';
 import { verifyAccessJWT } from '../lib/access-jwt';
+import { localAuth } from './localAuth';
 
 /**
  * Who is allowed to edit a church's website.
@@ -10,9 +11,15 @@ import { verifyAccessJWT } from '../lib/access-jwt';
  * page, read every form submission, and send push notifications to the
  * whole congregation.
  *
- * So there is no default. A deployment states which scheme it uses, and an
- * unrecognised or absent choice leaves the admin API refusing everything —
- * the same posture as a Cloudflare deployment with no audience configured.
+ * `local` (username/password, stored in this deployment's own database) is
+ * the default on both hosts — it needs no external account, no DNS, and no
+ * identity provider, so a freshly provisioned deployment can log in
+ * immediately. `cloudflare-access` ("SSO") is available by explicitly
+ * setting ADMIN_AUTH_MODE=cloudflare-access and CF_ACCESS_AUD — a
+ * deployment opts into it, rather than it being required just to get in the
+ * door. An unrecognised mode still leaves the admin API refusing
+ * everything, since silently falling back to an *unintended* scheme would
+ * be worse than refusing.
  */
 
 /** Cloudflare Access: a signed JWT injected at the edge. The default on Workers. */
@@ -86,7 +93,7 @@ export function noAuth(reason: string): AdminAuth {
 	};
 }
 
-export type AdminAuthMode = 'cloudflare-access' | 'proxy-header';
+export type AdminAuthMode = 'local' | 'cloudflare-access' | 'proxy-header';
 
 /**
  * Pick a scheme from configuration.
@@ -94,13 +101,21 @@ export type AdminAuthMode = 'cloudflare-access' | 'proxy-header';
  * `mode` is explicit rather than inferred from which credentials happen to
  * be present: inferring it means a deployment that loses a secret silently
  * changes how it authenticates, which is exactly the kind of surprise this
- * code should not contain.
+ * code should not contain. The one inference this does make is the default
+ * itself — `undefined`/`''` resolves to `local` rather than refusing
+ * everything, because `local` is always safe to fall back to: it still
+ * requires a real credential, stored in this deployment's own database,
+ * rather than trusting a header or a cookie nothing has configured yet.
  */
 export function resolveAdminAuth(
 	mode: string | undefined,
 	env: Env & { ADMIN_PROXY_HEADER?: string; ADMIN_PROXY_SHARED_SECRET?: string }
 ): AdminAuth {
 	switch (mode) {
+		case 'local':
+		case undefined:
+		case '':
+			return localAuth(env);
 		case 'cloudflare-access':
 			// An Access application that was never created leaves nothing to
 			// verify against. Reported as unconfigured rather than as a
@@ -110,9 +125,6 @@ export function resolveAdminAuth(
 			return cloudflareAccessAuth(env);
 		case 'proxy-header':
 			return proxyHeaderAuth(env);
-		case undefined:
-		case '':
-			return noAuth('ADMIN_AUTH_MODE is not set');
 		default:
 			return noAuth(`unknown ADMIN_AUTH_MODE "${mode}"`);
 	}

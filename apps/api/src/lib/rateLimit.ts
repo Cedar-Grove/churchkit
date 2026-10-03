@@ -75,6 +75,19 @@ export async function checkFormRateLimit(request: Request, env: Env): Promise<Ra
 }
 
 /**
+ * Per-IP only — a login attempt isn't a shared-quota resource like the form
+ * endpoints, it's "how many guesses has this one source made." Tight enough
+ * to make password guessing impractical, loose enough that a volunteer who
+ * mistypes a few times never gets locked out of their own admin panel.
+ */
+export const LOGIN_IP_LIMIT = 10;
+export const LOGIN_IP_WINDOW_SECONDS = 15 * 60;
+
+export async function checkLoginRateLimit(request: Request, env: Env): Promise<RateLimitResult> {
+	return hit(env, `login:ip:${clientIp(request)}`, LOGIN_IP_LIMIT, LOGIN_IP_WINDOW_SECONDS);
+}
+
+/**
  * Drops windows that have already rolled over. Called from the scheduled
  * handler so the table doesn't grow without bound — nothing reads a window
  * once it's past, so there's no reason to keep it.
