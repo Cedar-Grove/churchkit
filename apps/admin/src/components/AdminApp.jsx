@@ -2059,7 +2059,7 @@ function PdfUploadField({ label, value, onChange, toast }) {
   );
 }
 
-function LogoUploadField({ label, value, onChange, toast }) {
+function LogoUploadField({ label, value, onChange, toast, style }) {
   const [uploading, setUploading] = useState(false);
 
   async function handleUpload(file) {
@@ -2085,7 +2085,7 @@ function LogoUploadField({ label, value, onChange, toast }) {
   }
 
   return (
-    <Field label={label}>
+    <Field label={label} style={style}>
       <input
         type="file"
         accept="image/*"
@@ -2337,9 +2337,13 @@ function SettingsPage({ toast, caps }) {
         <Field label="Locale">
           <input style={inputStyle} value={settings.locale || ""} onChange={e => set("locale", e.target.value)} placeholder="en-US" />
         </Field>
-        <Field label="Homepage Image URL" style={{ gridColumn: "span 2" }}>
-          <input style={inputStyle} value={settings.hero_image_url || ""} onChange={e => set("hero_image_url", e.target.value)} placeholder="Shown beside the homepage hero. Leave empty to hide it." />
-        </Field>
+        {caps.mediaUploads ? (
+          <LogoUploadField label="Homepage Image" value={settings.hero_image_url} onChange={url => set("hero_image_url", url)} toast={toast} style={{ gridColumn: "span 2" }} />
+        ) : (
+          <div style={{ gridColumn: "span 2", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>
+            Configure media storage to enable the homepage image — it stays hidden until then.
+          </div>
+        )}
       </SettingsSection>
 
       {caps.email && (
@@ -2361,7 +2365,14 @@ function SettingsPage({ toast, caps }) {
         </SettingsSection>
       )}
 
-      {caps.mediaUploads && (
+      {/*
+        Read only by apps/mobile/src/screens/HomeScreen.tsx — the website
+        never shows a bulletin or newsletter link. caps.push is this
+        system's only signal that a mobile app is actually in use (see
+        APP_ONLY_PAGES above), so showing these to a deployment with no app
+        just offers settings that do nothing.
+      */}
+      {caps.mediaUploads && caps.push && (
         <SettingsSection title="Bulletin & Newsletter">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <PdfUploadField
