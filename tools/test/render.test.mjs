@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseDatabaseId, hostOf, zoneOf } from '../src/lib/render.mjs';
+import { parseDatabaseId, hostOf, zoneOf, parseCountResult } from '../src/lib/render.mjs';
 
 test('parseDatabaseId reads wrangler JSON output', () => {
 	const out = `{ "d1_databases": [{ "binding": "DB", "database_id": "acfbf587-46b0-4bb1-a067-c9533f29c856" }] }`;
@@ -10,6 +10,34 @@ test('parseDatabaseId reads wrangler JSON output', () => {
 test('parseDatabaseId reads the TOML shape older wrangler printed', () => {
 	const out = `[[d1_databases]]\nbinding = "DB"\ndatabase_id = "ff666327-825d-41de-bba7-689b3fb991d4"`;
 	assert.equal(parseDatabaseId(out), 'ff666327-825d-41de-bba7-689b3fb991d4');
+});
+
+test('parseCountResult reads the count past wrangler\'s banner', () => {
+	const out = `
+ ⛅️ wrangler 4.131.1 (update available 4.147.0)
+───────────────────────────────────────────────
+Resource location: remote
+
+🌀 Executing on remote database my-db (abc-123):
+🚣 Executed 1 command in 0.44ms
+[
+  {
+    "results": [
+      { "n": 3 }
+    ],
+    "success": true
+  }
+]
+`;
+	assert.equal(parseCountResult(out, -1), 3);
+});
+
+test('parseCountResult falls back when there is no JSON array at all', () => {
+	assert.equal(parseCountResult('wrangler exited without printing anything useful', -1), -1);
+});
+
+test('parseCountResult falls back on truncated JSON rather than throwing', () => {
+	assert.equal(parseCountResult('banner text\n[{ "results": [ { "n": ', -1), -1);
 });
 
 test('parseDatabaseId returns null rather than guessing', () => {

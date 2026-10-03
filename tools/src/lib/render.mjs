@@ -45,6 +45,26 @@ export function parseDatabaseId(stdout) {
 	return match ? match[1] : null;
 }
 
+/**
+ * Pull a `wrangler d1 execute --command "SELECT ... as n ..."` result's `n`
+ * out of stdout.
+ *
+ * wrangler prints a banner — version line, "Resource location: remote",
+ * the "🌀 Executing on…" lines — on stdout *before* the JSON result, so
+ * `JSON.parse(stdout)` throws on the banner text every time, not just
+ * sometimes. Slicing from the array's own opening bracket is what actually
+ * finds the JSON; nothing before it contains a literal `[`.
+ */
+export function parseCountResult(stdout, fallback) {
+	const jsonStart = stdout.indexOf('[');
+	if (jsonStart === -1) return fallback;
+	try {
+		return JSON.parse(stdout.slice(jsonStart))?.[0]?.results?.[0]?.n ?? fallback;
+	} catch {
+		return fallback;
+	}
+}
+
 /** A Cloudflare domain from a URL, for the routes block. */
 export function hostOf(url) {
 	try {

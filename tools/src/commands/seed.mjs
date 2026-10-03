@@ -4,6 +4,7 @@ import { readBrand, appDir, resourceNames, REPO_ROOT } from '../lib/paths.mjs';
 import { validate } from '../../../packages/brand/src/validate.mjs';
 import { toSettingsSql } from '../../../packages/brand/src/seed.mjs';
 import { run } from '../lib/run.mjs';
+import { parseCountResult } from '../lib/render.mjs';
 import { hashPassword, generatePassword } from '@churchkit/config/password';
 
 /**
@@ -116,12 +117,7 @@ export async function seed({ slug, flags }) {
 		// A query that fails to parse is treated as "an admin already exists"
 		// — the safe direction to be wrong in, since the alternative is
 		// minting a second default password nobody asked for.
-		let existing = 1;
-		if (check.ok) {
-			try {
-				existing = JSON.parse(check.stdout)?.[0]?.results?.[0]?.n ?? 1;
-			} catch { /* existing stays at the fail-safe value of 1 */ }
-		}
+		const existing = check.ok ? parseCountResult(check.stdout, 1) : 1;
 
 		if (existing > 0) {
 			console.log('  an admin login already exists — leaving it alone');
