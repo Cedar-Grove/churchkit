@@ -14,8 +14,19 @@
 
 import { FONT_PRESETS, type FontPreset } from '@churchkit/config/font-presets';
 
-export function resolveFontPreset(id: string | undefined): FontPreset {
-	return (id && FONT_PRESETS[id]) || FONT_PRESETS.classic;
+/**
+ * `undefined` when there is no admin override to apply — the caller (see
+ * Layout.astro) falls back to the compiled brand.json defaults in that
+ * case, exactly as this project's own rule says it should ("absent
+ * settings mean keep the compiled value"). This used to default to
+ * FONT_PRESETS.classic instead, which silently forced Cormorant Garamond +
+ * Roboto onto every deployment that had never opened admin's Branding
+ * section — invisible unless you compared the rendered font against the
+ * church's own brand.json, since Cormorant Garamond reads as "an elegant
+ * serif" at a glance same as whatever the brand file actually names.
+ */
+export function resolveFontPreset(id: string | undefined): FontPreset | undefined {
+	return id ? FONT_PRESETS[id] : undefined;
 }
 
 function hexToRgb(hex: string): [number, number, number] | null {

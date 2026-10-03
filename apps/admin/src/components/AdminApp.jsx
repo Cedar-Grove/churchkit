@@ -2249,7 +2249,18 @@ function SettingsPage({ toast, caps }) {
             </Field>
           ))}
           <Field label="Font Pairing" style={{ gridColumn: "span 2" }}>
-            <select style={inputStyle} value={settings.theme_font_pairing || "classic"} onChange={e => set("theme_font_pairing", e.target.value)}>
+            {/*
+              No default to a real preset here — "" means "whatever
+              brand.json compiled," a genuinely different thing from
+              "Classic" (Cormorant Garamond + Roboto specifically). Defaulting
+              the <select> to classic used to silently claim a church was
+              using a preset it had never chosen, while the site itself
+              rendered its own brand.json fonts underneath — the two could
+              name completely different typefaces and nothing here would
+              show it.
+            */}
+            <select style={inputStyle} value={settings.theme_font_pairing || ""} onChange={e => set("theme_font_pairing", e.target.value)}>
+              <option value="">Default — whatever brand.json compiled</option>
               {FONT_PAIRINGS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
           </Field>
@@ -2257,7 +2268,9 @@ function SettingsPage({ toast, caps }) {
             <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_primary_color || "var(--admin-brand)", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Primary" />
             <span style={{ width: 28, height: 28, borderRadius: "50%", background: settings.theme_accent_color || "var(--admin-accent)", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} title="Accent" />
             <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#666" }}>
-              {(FONT_PAIRINGS.find(([id]) => id === (settings.theme_font_pairing || "classic")) || [])[1]}
+              {settings.theme_font_pairing
+                ? (FONT_PAIRINGS.find(([id]) => id === settings.theme_font_pairing) || [])[1]
+                : "Default — whatever brand.json compiled"}
               {" — fonts load from Google Fonts on the live site, not previewed here."}
             </span>
           </div>

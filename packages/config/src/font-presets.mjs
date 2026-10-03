@@ -42,6 +42,13 @@ export const FONT_PRESETS = {
 		display: { family: 'Work Sans', stack: "'Work Sans', system-ui, -apple-system, sans-serif" },
 		webFontUrl: 'https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700&display=swap',
 	},
+	elegant: {
+		name: 'Elegant',
+		heading: { family: 'Cinzel', stack: "'Cinzel', Georgia, serif" },
+		body: { family: 'Inter', stack: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" },
+		display: { family: 'Inter', stack: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" },
+		webFontUrl: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap',
+	},
 };
 
 /**

@@ -2,6 +2,7 @@
 import { getSettings } from '../lib/api';
 import { env } from '../lib/env';
 import { resolveFontPreset, deriveColors } from '../lib/theme';
+import compiledBrand from '../styles/brand.json';
 import '../styles/tokens.css';
 
 interface Props {
@@ -28,8 +29,12 @@ const metaDescription = description ?? settings.tagline ?? '';
 
 // Curated, request-time theme override — see ../lib/theme. Absent settings
 // mean "use whatever packages/brand/generate.mjs compiled," so a church
-// that has never opened admin's Branding section is unaffected.
-const fontPreset = resolveFontPreset(settings.theme_font_pairing);
+// that has never opened admin's Branding section is unaffected — this is
+// why the fallback here is this deployment's own compiled brand.json
+// (written alongside tokens.css by `churchkit brand`) rather than one of
+// the four font-picker presets, none of which are likely to be the actual
+// fonts a church's brand.json names.
+const fontPreset = resolveFontPreset(settings.theme_font_pairing) ?? compiledBrand.fonts;
 const colorOverrides = deriveColors(settings.theme_primary_color, settings.theme_accent_color);
 ---
 
