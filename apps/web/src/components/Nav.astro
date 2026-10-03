@@ -126,14 +126,18 @@ const utilityLine = [worshipTime && `Sunday Worship ${worshipTime}`, location].f
 </header>
 
 <style>
-  /* Self-contained: this header brings its own accent, rule and deep-green
-     values so it can drop onto the existing Layout without touching it. */
+  /* These alias the church's own brand tokens (tokens.css, generated from
+     brand.json) rather than naming a color literally — they used to be
+     hardcoded to one fixed gold-and-green palette, so the nav's CTA pill
+     and dropdown/mobile menu looked identical on every deployment no
+     matter what colors a church configured. --hdr-height is the one
+     literal worth keeping local: it's a layout dimension, not a color. */
   .utility,
   .mast {
-    --hdr-accent: #c69a4e;
-    --hdr-accent-deep: #a87c2e;
-    --hdr-rule: #ddd7cb;
-    --hdr-deep: #1c2a17;
+    --hdr-accent: var(--accent);
+    --hdr-accent-deep: var(--brand-light);
+    --hdr-rule: var(--border);
+    --hdr-deep: var(--brand);
     --hdr-height: 100px;
   }
 
