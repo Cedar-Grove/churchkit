@@ -72,7 +72,12 @@ const { carouselSlides, settings, text, theme } = Astro.props;
   </div>
   {theme === 'classic' && settings.hero_image_url && (
     <div class="hero__right">
-      <img src={settings.hero_image_url} alt={settings.church_name ?? ''} class="hero__photo" />
+      <img
+        src={settings.hero_image_url}
+        alt={settings.church_name ?? ''}
+        class="hero__photo"
+        style={`object-position: ${settings.hero_image_focal_x ?? 50}% ${settings.hero_image_focal_y ?? 50}%`}
+      />
     </div>
   )}
 </section>

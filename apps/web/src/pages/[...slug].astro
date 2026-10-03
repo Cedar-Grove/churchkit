@@ -48,7 +48,7 @@ if (!page || page.status !== 'published') return Astro.rewrite('/404');
       <img
         src={page.image_url}
         alt={page.title}
-        style={`object-position: ${(page.image_focal_x ?? 0.5) * 100}% ${(page.image_focal_y ?? 0.5) * 100}%`}
+        style={`object-position: ${page.image_focal_x ?? 50}% ${page.image_focal_y ?? 50}%`}
       />
     </div>
   )}

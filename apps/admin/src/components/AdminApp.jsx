@@ -2338,7 +2338,24 @@ function SettingsPage({ toast, caps }) {
           <input style={inputStyle} value={settings.locale || ""} onChange={e => set("locale", e.target.value)} placeholder="en-US" />
         </Field>
         {caps.mediaUploads ? (
-          <LogoUploadField label="Homepage Image" value={settings.hero_image_url} onChange={url => set("hero_image_url", url)} toast={toast} style={{ gridColumn: "span 2" }} />
+          <div style={{ gridColumn: "span 2" }}>
+            <LogoUploadField label="Homepage Image" value={settings.hero_image_url} onChange={url => set("hero_image_url", url)} toast={toast} />
+            {/*
+              Only meaningful once there's an image to position within —
+              the hero crops this to a tall panel (see HeroSection.astro),
+              so the part of a wide photo that matters (a face, the cross on
+              the steeple) needs to be choosable rather than always assuming
+              the center.
+            */}
+            {settings.hero_image_url && (
+              <FocalPointPicker
+                src={settings.hero_image_url}
+                x={settings.hero_image_focal_x}
+                y={settings.hero_image_focal_y}
+                onChange={(x, y) => { set("hero_image_focal_x", x); set("hero_image_focal_y", y); }}
+              />
+            )}
+          </div>
         ) : (
           <div style={{ gridColumn: "span 2", fontFamily: "DM Sans, sans-serif", fontSize: 13, color: "#888" }}>
             Configure media storage to enable the homepage image — it stays hidden until then.
