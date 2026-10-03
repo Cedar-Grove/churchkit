@@ -1,11 +1,20 @@
 ---
 /**
  * The homepage hero, in five structural treatments (`theme`) — height,
- * alignment, overlay darkness, button shape, carousel-control style. Every
+ * alignment, overlay darkness, button shape, carousel-control style, and
+ * now where (and how) the church's own Homepage Image appears. Every
  * treatment reads color from the same custom properties
  * (--brand/--accent/--white/...) that admin's Branding section controls,
  * so switching themes never changes a church's configured colors, only how
  * they're laid out. See @churchkit/config/home-layouts for the theme list.
+ *
+ * The Homepage Image's role differs by theme rather than being the same
+ * side panel everywhere — classic keeps the 50/50 split; editorial and
+ * visitor-first use it as a full-bleed backdrop (two different overlay
+ * treatments); bold mirrors the split with a brand-tinted duotone; minimal
+ * gives it a small, quiet inset. A theme with no image configured falls
+ * back to its plain colored background exactly as before — none of this
+ * invents a photo that was never uploaded.
  */
 interface Props {
   carouselSlides: any[];
@@ -14,9 +23,32 @@ interface Props {
   theme: string;
 }
 const { carouselSlides, settings, text, theme } = Astro.props;
+
+const heroImage = settings.hero_image_url || null;
+const focalPosition = `${settings.hero_image_focal_x ?? 50}% ${settings.hero_image_focal_y ?? 50}%`;
+const fullBleedThemes = new Set(['editorial', 'visitor-first']);
+// bold and minimal only make room for a side image panel when one exists —
+// otherwise their hero__left stays full width, same as before this image
+// support existed.
+const hasSideImage = !!heroImage && (theme === 'bold' || theme === 'minimal');
+const hasPhotoBg = !!heroImage && fullBleedThemes.has(theme);
 ---
 
-<section class={`hero hero--${theme}`} id="hero" data-theme={theme}>
+<section class={`hero hero--${theme}${hasSideImage ? ' hero--has-side' : ''}${hasPhotoBg ? ' hero--has-photo-bg' : ''}`} id="hero" data-theme={theme}>
+  {heroImage && fullBleedThemes.has(theme) && (
+    <div class="hero__photo-bg" style={`background-image: url('${heroImage}'); background-position: ${focalPosition};`}></div>
+  )}
+  {heroImage && theme === 'bold' && (
+    <div class="hero__side hero__side--bold">
+      <img src={heroImage} alt="" style={`object-position: ${focalPosition}`} />
+      <div class="hero__duotone"></div>
+    </div>
+  )}
+  {heroImage && theme === 'minimal' && (
+    <div class="hero__side hero__side--minimal">
+      <img src={heroImage} alt="" style={`object-position: ${focalPosition}`} />
+    </div>
+  )}
   <div class="hero__left">
     {carouselSlides.length > 0 ? (
       <>
@@ -29,7 +61,7 @@ const { carouselSlides, settings, text, theme } = Astro.props;
               }
               <div class="hero__overlay"></div>
               {!slide.image_url && (
-                <div class="container hero__content">
+                <div class={`container hero__content${theme === 'visitor-first' ? ' hero__content--card' : ''}`}>
                   {slide.headline && <h1 class="hero__title">{slide.headline}</h1>}
                   {slide.subtext && <p class="hero__body">{slide.subtext}</p>}
                   {slide.button_label && slide.button_link && (
@@ -54,7 +86,7 @@ const { carouselSlides, settings, text, theme } = Astro.props;
       <div class="hero__slide hero__slide--active">
         <div class="hero__bg hero__bg--1"></div>
         <div class="hero__overlay"></div>
-        <div class="container hero__content">
+        <div class={`container hero__content${theme === 'visitor-first' ? ' hero__content--card' : ''}`}>
           {/*
             With no carousel slides configured this falls back to the
             church's own name and tagline — never to invented copy about
@@ -70,24 +102,44 @@ const { carouselSlides, settings, text, theme } = Astro.props;
       </div>
     )}
   </div>
-  {theme === 'classic' && settings.hero_image_url && (
+  {heroImage && theme === 'classic' && (
     <div class="hero__right">
       <img
-        src={settings.hero_image_url}
+        src={heroImage}
         alt={settings.church_name ?? ''}
         class="hero__photo"
-        style={`object-position: ${settings.hero_image_focal_x ?? 50}% ${settings.hero_image_focal_y ?? 50}%`}
+        style={`object-position: ${focalPosition}`}
       />
     </div>
   )}
 </section>
 
 <style>
+  /* ── shared: every theme can layer a full-bleed or side image behind/beside hero__left ── */
+  .hero { position: relative; display: flex; height: 580px; overflow: hidden; background: var(--brand); }
+  .hero__left { position: relative; z-index: 1; width: 50%; flex-shrink: 0; }
+  .hero__photo-bg { position: absolute; inset: 0; z-index: 0; background-size: cover; background-repeat: no-repeat; }
+  /*
+    A text-only carousel slide's own background (.hero__bg--1) is an opaque
+    solid brand color, meant to be the hero's backdrop when there's nothing
+    else — but for a theme using the Homepage Image as a full-bleed
+    backdrop, that opaque slide background sits directly on top of
+    .hero__photo-bg and hides it completely. Only stripped when a photo
+    backdrop actually exists, so a deployment with no Homepage Image still
+    gets the solid color exactly as before.
+  */
+  .hero--has-photo-bg .hero__bg--1 { background: transparent; }
+
   /* ── classic: split 50/50, full height, rounded pill controls ── */
-  .hero { display: flex; height: 580px; overflow: hidden; background: var(--brand); }
-  .hero__left { position: relative; width: 50%; flex-shrink: 0; }
   .hero__right { width: 50%; flex-shrink: 0; overflow: hidden; }
-  .hero__photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /*
+    object-fit: contain (not cover): a church's own photo can be any shape,
+    and cropping it unpredictably based on whatever aspect ratio it happens
+    to be is worse than letterboxing it against the hero's own background —
+    a tightly-cropped steeple with the base of the building cut off reads
+    as broken in a way plain colored bars behind a whole photo does not.
+  */
+  .hero__photo { width: 100%; height: 100%; object-fit: contain; background: var(--brand); display: block; }
   .hero__slides { position: relative; width: 100%; height: 100%; }
   .hero__slide { position: absolute; inset: 0; display: flex; align-items: center; opacity: 0; transition: opacity 0.8s ease; pointer-events: none; }
   .hero__slide--active { opacity: 1; pointer-events: auto; }
@@ -110,9 +162,13 @@ const { carouselSlides, settings, text, theme } = Astro.props;
   .hero__arrow--prev { left: 24px; }
   .hero__arrow--next { right: 24px; }
 
-  /* ── editorial: full-bleed, taller, left-aligned serif, no pill buttons ── */
+  /* ── editorial: full-bleed photo backdrop, taller, left-aligned serif, no pill buttons ── */
   .hero--editorial { height: 640px; }
   .hero--editorial .hero__left { width: 100%; }
+  .hero--editorial .hero__photo-bg::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.25) 55%, transparent 85%);
+  }
   .hero--editorial .hero__content { max-width: 720px; }
   .hero--editorial .hero__title { font-size: clamp(48px, 7vw, 76px); font-weight: 400; letter-spacing: -0.5px; }
   .hero--editorial .hero__overlay { background: linear-gradient(0deg, rgba(0,0,0,0.35), transparent 55%); }
@@ -122,20 +178,35 @@ const { carouselSlides, settings, text, theme } = Astro.props;
   .hero--editorial .hero__dots { bottom: 36px; left: 64px; transform: none; }
   .hero--editorial .hero__arrow { display: none; }
 
-  /* ── bold: centered, tall, uppercase, sharp-cornered accent button ── */
+  /* ── bold: centered text, mirrored split with a brand-tinted duotone photo on the left ── */
   .hero--bold { height: 680px; }
   .hero--bold .hero__left { width: 100%; }
-  .hero--bold .hero__content { max-width: 760px; margin: 0 auto; text-align: center; }
+  .hero--bold.hero--has-side .hero__left { width: 52%; }
+  .hero__side--bold { order: -1; position: relative; width: 48%; flex-shrink: 0; overflow: hidden; }
+  .hero__side--bold img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(0.25) contrast(1.1); }
+  .hero__duotone { position: absolute; inset: 0; background: var(--brand); mix-blend-mode: multiply; opacity: 0.6; }
+  .hero--bold.hero--has-side .hero__content { max-width: 560px; text-align: left; }
+  .hero--bold:not(.hero--has-side) .hero__content { max-width: 760px; margin: 0 auto; text-align: center; }
   .hero--bold .hero__overlay { background: rgba(0,0,0,0.3); }
-  .hero--bold .hero__title { text-transform: uppercase; letter-spacing: 1px; font-size: clamp(42px, 6.5vw, 72px); }
-  .hero--bold .hero__body { margin-left: auto; margin-right: auto; }
-  .hero--bold .hero__actions { justify-content: center; }
+  .hero--bold .hero__title { text-transform: uppercase; letter-spacing: 1px; font-size: clamp(38px, 5.8vw, 64px); }
+  .hero--bold:not(.hero--has-side) .hero__body { margin-left: auto; margin-right: auto; }
+  .hero--bold:not(.hero--has-side) .hero__actions { justify-content: center; }
   .hero--bold .hero__btn { border-radius: 2px; padding: 16px 34px; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
   .hero--bold .hero__btn--secondary { border-radius: 2px; border-width: 2px; }
 
-  /* ── minimal: short, quiet, link-style CTA, tiny dots ── */
+  /* ── minimal: short, quiet, link-style CTA, a small unobtrusive inset photo ── */
   .hero--minimal { height: 420px; }
   .hero--minimal .hero__left { width: 100%; }
+  .hero--minimal.hero--has-side .hero__left { width: 68%; }
+  .hero__side--minimal { width: 32%; flex-shrink: 0; padding: 36px 36px 36px 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  /*
+    height-driven, not width-driven: a width:100% image at this aspect
+    ratio wants to be taller than the hero itself (e.g. 716px in a 420px
+    box), which the hero's own overflow:hidden then silently clips —
+    hiding the padding and the rounded corners along with it, since only
+    the flat middle of the (now oversized) image was ever visible.
+  */
+  .hero__side--minimal img { height: 100%; width: auto; max-width: 100%; aspect-ratio: 4/5; object-fit: cover; border-radius: 6px; display: block; }
   .hero--minimal .hero__overlay { background: rgba(0,0,0,0.12); }
   .hero--minimal .hero__content { max-width: 520px; }
   .hero--minimal .hero__title { font-size: clamp(36px, 5vw, 54px); font-weight: 500; letter-spacing: 0; }
@@ -148,10 +219,17 @@ const { carouselSlides, settings, text, theme } = Astro.props;
   .hero--minimal .hero__dot--active { width: 14px; }
   .hero--minimal .hero__arrow { display: none; }
 
-  /* ── visitor-first: short banner, brand-solid, big prominent CTA ── */
-  .hero--visitor-first { height: 320px; }
+  /* ── visitor-first: short full-bleed banner with the text in a solid floating card ── */
+  .hero--visitor-first { height: 360px; }
   .hero--visitor-first .hero__left { width: 100%; }
+  .hero--visitor-first .hero__photo-bg::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.42); }
   .hero--visitor-first .hero__content { max-width: 640px; }
+  .hero--visitor-first .hero__content--card {
+    background: var(--white); color: var(--ink); border-radius: 12px;
+    padding: 28px 32px; box-shadow: 0 18px 40px rgba(0,0,0,0.25);
+  }
+  .hero--visitor-first .hero__content--card .hero__title { color: var(--brand); font-size: clamp(30px, 4.2vw, 44px); margin-bottom: 8px; }
+  .hero--visitor-first .hero__content--card .hero__body { color: var(--ink-soft); font-size: 18px; margin-bottom: 18px; }
   .hero--visitor-first .hero__title { font-size: clamp(34px, 5vw, 52px); margin-bottom: 10px; }
   .hero--visitor-first .hero__body { font-size: 19px; margin-bottom: 22px; }
   .hero--visitor-first .hero__btn { padding: 15px 30px; font-size: 15px; }
@@ -160,8 +238,9 @@ const { carouselSlides, settings, text, theme } = Astro.props;
 
   @media (max-width: 768px) {
     .hero { height: auto; flex-direction: column; }
-    .hero__left { width: 100%; height: 420px; }
+    .hero__left { width: 100% !important; height: 420px; margin-left: 0 !important; }
     .hero__right { width: 100%; height: 260px; }
+    .hero__side--bold, .hero__side--minimal { display: none; }
     .hero__arrow { display: none; }
     .hero--editorial, .hero--bold, .hero--minimal, .hero--visitor-first { height: auto; }
     .hero--editorial .hero__left, .hero--bold .hero__left, .hero--minimal .hero__left, .hero--visitor-first .hero__left { height: 420px; }
